@@ -1,0 +1,31 @@
+﻿@{
+    ViewData["Title"] = "MyPage";
+}
+@model BlogNetworkB.Models.Account.AuthorViewModel
+<div class="main-blck page-blck light-shadow p-4 m-4">
+
+    <div>
+        <h1>@Model.GetFullName()</h1>
+    </div>
+
+    <div class="start-flex-blck r-t-login">
+        <p>Статьи:</p> <a class="text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Article" asp-action="MyArticlesList">@Model.ArticlesCount</a>
+    </div>
+    <div class="start-flex-blck r-t-login">
+        <p>Комментарии:</p> <a class="text-dark mrg-mini-left w-text-decor">@Model.CommentsCount</a>
+    </div>
+
+    <div>
+        <h3>Подробности: </h3>
+        <form method="get" asp-controller="Role" asp-action="MyRoleList">
+            <button class="btn-success" type="submit">Роли</button>
+        </form>
+    </div>
+
+    <div>
+        <form method="get" asp-controller="Article" asp-action="WriteArticle">
+            <button class="btn-success" type="submit" >Добавить статью</button>
+        </form>
+    </div>
+
+</div>

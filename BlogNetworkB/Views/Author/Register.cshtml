@@ -1,0 +1,34 @@
+﻿@{
+    ViewData["Title"] = "Register";
+}
+@model BlogNetworkB.Models.Account.RegisterViewModel
+<div class="main-blck light-shadow">
+    <form class="lgn-form" method="post" asp-controller="Author" asp-action="ConfirmRegister" >
+        <div asp-validation-summary="ModelOnly" />
+        <div class="fields-container">
+            <label class="main-lbl text-end">Имя:</label><input asp-for="FirstName" />
+        </div>
+
+        <div class ="fields-container">
+            <label class="main-lbl">Фамилия:</label><input asp-for="LastName" />
+        </div>
+
+        <div class="fields-container">
+            <label class="main-lbl">Логин:</label><input asp-for="Login" />
+        </div>
+
+        <div class="fields-container">
+            <label class="main-lbl">Email:</label><input asp-for="Email" />
+        </div>
+
+        <div class="fields-container">
+            <label class="main-lbl">Пароль:</label><input asp-for="Password" />
+        </div>
+
+        <div class="fields-container">
+            <label class="main-lbl">Подтверждение пароля:</label><input asp-for="ConfirmPassword" />
+        </div>
+        
+        <button class="btn-success btn-cntr" type="submit">Регистрация</button>
+    </form>
+</div>

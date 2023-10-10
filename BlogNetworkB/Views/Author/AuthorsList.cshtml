@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "AuthorsList";
+}
+
+@model BlogNetworkB.Models.Account.AuthorListViewModel
+
+<div class="main-blck light-shadow p-2 m-1 flex-d-column">
+    @foreach(var avm in Model.Authors)
+    {
+        <div class="pdng-norm">
+            <h3>@avm.GetFullName()</h3>
+            @foreach(var role in avm.Roles)
+            {
+                <p>@role</p>
+            }
+            @if(User.IsInRole("Admin"))
+            {
+                <div class="btn-flex-blck">
+                        <a class ="link-danger text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Author" asp-action="DeleteAuthor">Удалить</a>
+                        <a class="link-warning text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Author" asp-action="UpdateAuthor">Изменить</a>
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,30 @@
+﻿@{
+    ViewData["Title"] = "TagList";
+}
+
+@model BlogNetworkB.Models.Tag.TagListViewModel
+
+<div class="m-4 p-4 light-shadow">
+
+    @if (Model.Tags != null)
+    {
+        foreach (var tvm in Model.Tags)
+        {
+            <div class="custom-color-0 title-container mrg-one-bttm">
+                <p>@tvm.Content</p>
+            </div>
+        }
+    }
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="mrg-one-bttm p-4">
+            <form method="get" asp-controller="Tag" asp-action="CreateTag">
+                <div class="btn-grid-blck">
+                    <button class="btn-success frm-btn-one" type="submit">Добавить тег</button>
+                </div>
+            </form>
+        </div>
+    }
+
+</div>

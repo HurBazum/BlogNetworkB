@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "RoleList";
+}
+
+@model BlogNetworkB.Models.Role.MyRoleViewModel
+
+<div>
+    <h2>Мои роли: </h2>
+
+    <div>
+        @foreach (var role in Model.Roles)
+        {
+            if (Model.Roles.Last() != role)
+            {
+                <p>@role, </p>
+            }
+            else
+            {
+                    <p>@role</p>
+            }
+        }
+    </div>
+</div>

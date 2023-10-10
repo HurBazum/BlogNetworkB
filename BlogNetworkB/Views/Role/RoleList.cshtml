@@ -1,0 +1,14 @@
+﻿@{
+    ViewData["Title"] = "RoleList";
+}
+
+@model BlogNetworkB.Models.Role.RoleListViewModel
+
+<div>
+    @foreach(var role in Model.Roles)
+    {
+        <div>
+            <p>@role.RoleId : @role.Name</p>
+        </div>
+    }
+</div>

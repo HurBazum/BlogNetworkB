@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "MyArticlesList";
+}
+
+@model BlogNetworkB.Models.Article.ArticleListViewModel
+
+@if(Model.Articles != null)
+{
+    foreach(var avm in Model.Articles)
+    {
+        <div class="light-shadow title-container">
+            <a>@avm.Title</a>
+        </div>
+    }
+}
+
+<div>
+    <button class="btn-success" type="submit" asp-controller="Article" asp-action="RedirectToWriteArticle">Добавить статью</button>
+</div>

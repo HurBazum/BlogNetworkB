@@ -1,0 +1,148 @@
+﻿.light-shadow {
+    box-shadow: 0 0 0.8em;
+}
+
+.main-blck{
+    padding:1.4em;
+    background-color:white;
+    display:flex;
+    width:fit-content;
+}
+
+.flex-d-column{
+    flex-direction:column;
+}
+
+.r-t-login {
+    width: 100%;
+}
+
+.r-t-login > *{
+    display:inline-flex;
+}
+
+.a-c-blck{
+
+}
+
+.page-blck {
+    width: 75vh;
+    height: fit-content;
+    flex-wrap: wrap;
+    flex-direction: column;
+}
+
+.fields-container {
+    display: inline-flex;
+    justify-content:flex-end;
+    width:60vh;
+}
+
+.fields-container > * {
+     margin-bottom: 1em;
+     width:50%;
+}
+.main-lbl {
+    display: flex;
+    font-size: inherit;
+    width: 18vh;
+    justify-content: flex-end;
+    padding-right: 2em;
+}
+
+.lgn-form {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.article-blck {
+    padding: 0.4em;
+    background-color: white;
+    box-shadow: black 1px;
+    display: flex;
+    width: 50vh;
+}
+
+.article-blck > form > div{
+    margin:2em;
+}
+
+.article-blck > form:last-child{
+    justify-content:center;
+}
+
+.title-container {
+    padding: 1em 2em 0.8em 2em;
+    margin: 1.6em;
+}
+
+.frm-btn-one{
+    width:50%;
+}
+
+.frm-btn-two{
+    width:25%;
+    display:inline-block;
+    margin:2em;
+}
+
+.btn-grid-blck{
+    display:grid;
+    justify-items:center;
+}
+
+.btn-flex-blck{
+    display:flex;
+    justify-content:center;
+}
+
+.start-flex-blck {
+    display: flex;
+    justify-content: start;
+}
+
+.pdng-rem06 {
+    padding: 0.6rem;
+}
+
+.pdng-norm{
+    padding:1.5vh;
+}
+
+.no-brdr{
+    border:none;
+}
+
+.caption-field {
+    width: 45%;
+    background-color: var(--bs-gray-200);
+}
+
+.article-div{
+    word-wrap:break-word;
+}
+
+.article {
+    width: 100%;
+    position: relative;
+    overflow: auto;
+    min-height: 30vh;
+    background-color: var(--bs-gray-200);
+}
+
+.mrg-one-bttm{
+    margin-bottom:1vh;
+}
+
+.mrg-mini-left {
+    margin-left: 0.3em;
+}
+
+.w-text-decor{
+    text-decoration:none;
+}
+
+.custom-color-0 {
+    background-color: #f2f6fc;
+}
