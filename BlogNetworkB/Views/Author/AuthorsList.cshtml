@@ -4,7 +4,7 @@
 
 @model BlogNetworkB.Models.Account.AuthorListViewModel
 
-<div class="main-blck light-shadow p-2 m-1 flex-d-column">
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
     @foreach(var avm in Model.Authors)
     {
         <div class="pdng-norm">
@@ -13,13 +13,32 @@
             {
                 <p>@role</p>
             }
-            @if(User.IsInRole("Admin"))
-            {
-                <div class="btn-flex-blck">
-                        <a class ="link-danger text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Author" asp-action="DeleteAuthor">Удалить</a>
-                        <a class="link-warning text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Author" asp-action="UpdateAuthor">Изменить</a>
-                </div>
-            }
+            <div class="start-flex-blck r-t-login">
+
+                <form method="get" asp-controller="Author" asp-action="AuthorPage">
+                    <input class="id-input" name="id" value="@avm.AuthorId" />
+                    <button class="btn-success" type="submit">Просмотр</button>
+                </form>
+
+                @if(User.IsInRole("Admin"))
+                {
+                    <form method="post" asp-controller="Author" asp-action="DeleteAuthor">
+                        <input class="id-input" name="id" value="@avm.AuthorId" />
+                        <button class="btn-danger" type="submit">Удалить</button>
+                    </form>
+                    <form method="get" asp-controller="Role" asp-action="AddRole">
+                        <input class="id-input" name="id" value="@avm.AuthorId" />
+                        <button class="btn-warning" type="submit">Добавить роль</button>
+                    </form>
+                }
+                @if(User.IsInRole("Moderator"))
+                {
+                    <form method="get" asp-controller="Author" asp-action="EditAuthor">
+                        <input class="id-input" name="id" value="@avm.AuthorId" />
+                        <button class="btn-warning" type="submit">Изменить</button>
+                    </form>
+                }
+            </div>
         </div>
     }
 </div>

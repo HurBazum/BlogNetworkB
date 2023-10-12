@@ -29,9 +29,6 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="Register">Регистрация</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Tag" asp-action="TagList">Теги</a>
-                        </li>
                         @if(User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item">
@@ -42,6 +39,12 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="AuthorsList">Авторы</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Tag" asp-action="TagList">Статьи</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Tag" asp-action="TagList">Теги</a>
                             </li>
                         }
                         else
@@ -57,7 +60,7 @@
     </header>
     <div class="container" style="display:grid;justify-items:center;">
         <main role="main" class="pb-3">
-
+            
 
             @RenderBody()
         </main>
@@ -71,6 +74,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

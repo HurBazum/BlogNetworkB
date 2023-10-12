@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "EditAuthor";
+}
+
+@model BlogNetworkB.Models.Account.UpdateAuthorRequestViewModel
+
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">    
+    <div class="btn-grid-blck">
+        @if (Model.AuthorId != null)
+        {
+            <h3>Редактирование данных пользователя [@Model.AuthorId]</h3>
+        }
+        else
+        {
+            <h3>Редактирование моих данных</h3>
+        }
+    </div>
+
+    <form method="post" asp-controller="Author" asp-action="ConfirmEditAuthor">
+        <div asp-validation-summary="ModelOnly"/>
+
+        <input class="id-input" asp-for="AuthorId" />
+
+        <div class="fields-container">
+            <label asp-for="NewFirstName"></Label>
+            <input asp-for="NewFirstName" />
+        </div>
+        <div class="fields-container">
+            <label asp-for="NewLastName"></Label>
+            <input asp-for="NewLastName" />
+        </div>
+        <div class="fields-container">
+            <label asp-for="NewLogin"></Label>
+            <input asp-for="NewLogin" />
+        </div>
+        <div class="fields-container">
+            <label asp-for="NewEmail"></Label>
+            <input asp-for="NewEmail" />
+        </div>
+        <div class="fields-container">
+            <label asp-for="NewPassword"></Label>
+            <input asp-for="NewPassword" />
+        </div>
+
+        <div class="btn-grid-blck">
+            <button class="btn-success frm-btn-one" type="submit">Изменить</button>
+        </div>
+    </form>
+</div>

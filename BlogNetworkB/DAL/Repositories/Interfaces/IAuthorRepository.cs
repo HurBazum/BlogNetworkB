@@ -11,7 +11,7 @@ namespace BlogNetworkB.DAL.Repositories.Interfaces
         public Task<Author> GetAuthorByEmail(string email);
         public Task<Author[]> GetAll();
         public Task UpdateAuthor(Author author, UpdateAuthorQuery updateAuthorQuery);
-
+        public Task AddRole(Author author, Role role);
         public Task<Role[]> GetAuthorsRoles(Author author);
     }
 }

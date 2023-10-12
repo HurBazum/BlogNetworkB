@@ -61,19 +61,38 @@ namespace BlogNetworkB.Controllers
             return View("WriteArticle", articleViewModel);
         }
 
-        public IActionResult RediretToWriteArticle() => RedirectToAction("WriteArticle", "Article");
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> MyArticlesList()
+        public async Task<IActionResult> MyArticlesList(int? id)
         {
-            var author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+            Author author = new();
+
+            if (id == null)
+            {
+                author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+            }
+            if(id != null)
+            {
+                author = await _authorRepository.GetAuthorById((int)id);
+            }
 
             var articles = await _articleRepository.GetArticlesByAuthor(author);
-
+            
             var avmArray = _mapper.Map<ArticleViewModel[]>(articles);
 
             return View(new ArticleListViewModel { Articles = avmArray });
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ArticleList()
+        {
+            var articles = await _articleRepository.GetAll();
+
+            var avmArray = _mapper.Map<ArticleViewModel[]>(articles);
+
+            return View("MyArticleList", new ArticleListViewModel { Articles = avmArray });
         }
     }
 }

@@ -20,6 +20,12 @@ namespace BlogNetworkB.Controllers
             _mapper = mapper;
         }
 
+        #region получение списка ролей
+
+        /// <summary>
+        /// полный список ролей
+        /// </summary>
+        /// <returns></returns>
         [Authorize]
         [HttpGet]
         [Route("/[controller]/All")]
@@ -32,6 +38,10 @@ namespace BlogNetworkB.Controllers
             return View(new RoleListViewModel { Roles = rolesArray });
         }
 
+        /// <summary>
+        /// роли конкретного пользователя
+        /// </summary>
+        /// <returns></returns>
         [Authorize]
         [HttpGet]
         [Route("/[controller]/MyRoles")]
@@ -56,5 +66,44 @@ namespace BlogNetworkB.Controllers
                 return View("RoleList", new RoleListViewModel { Roles = rolesArray });
             }
         }
+
+        #endregion
+
+        #region Добавление роли пользователю
+
+        [Authorize]
+        [HttpGet]
+        [Route("/[controller]/AuthorRoles/NewRole")]
+        public IActionResult AddRole(int id) => View(new RoleViewModel { AuthorId = id });
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/AuthorRoles/NewRole")]
+        public async Task<IActionResult> ConfirmAddRole([FromForm] RoleViewModel roleViewModel)
+        {
+            var role = await _roleRepository.GetRoleById(roleViewModel.RoleId);
+            var author = await _authorRepository.GetAuthorById(roleViewModel.AuthorId);
+
+            // т.к. метод get отказывается принимать
+            // roleViewModel.AuthorId
+            if (role == null)
+            {
+                int id = roleViewModel.AuthorId;
+                return View("AddRole", id);
+            }
+
+            // если автор уже имеет такую роль - ничего не происходит
+            bool hasRole = (_authorRepository.GetAuthorsRoles(author).Result.Contains(role) == true);
+            if (hasRole)
+            {
+                return RedirectToAction("AuthorsList", "Author");
+            }
+
+            await _authorRepository.AddRole(author, role);
+
+            return RedirectToAction("AuthorsList", "Author");
+        }
+
+        #endregion
     }
 }

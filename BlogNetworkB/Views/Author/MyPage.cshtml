@@ -1,7 +1,10 @@
 ﻿@{
     ViewData["Title"] = "MyPage";
 }
+
 @model BlogNetworkB.Models.Account.AuthorViewModel
+
+
 <div class="main-blck page-blck light-shadow p-4 m-4">
 
     <div>
@@ -9,23 +12,37 @@
     </div>
 
     <div class="start-flex-blck r-t-login">
-        <p>Статьи:</p> <a class="text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Article" asp-action="MyArticlesList">@Model.ArticlesCount</a>
+        <p>Статьи:</p> 
+        <form method="get" asp-controller="Article" asp-action="MyArticlesList">
+            <input class="id-input" name="id" asp-for="AuthorId" />
+            <button class="btn-w-decor" type="submit">@Model.ArticlesCount</button>
+        </form>
+        <!--<a class="text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Article" asp-action="MyArticlesList">@Model.ArticlesCount</a>-->
     </div>
     <div class="start-flex-blck r-t-login">
         <p>Комментарии:</p> <a class="text-dark mrg-mini-left w-text-decor">@Model.CommentsCount</a>
     </div>
 
     <div>
-        <h3>Подробности: </h3>
-        <form method="get" asp-controller="Role" asp-action="MyRoleList">
-            <button class="btn-success" type="submit">Роли</button>
-        </form>
+        <h4>Подробности: </h4>
+        <div>
+            <p>Email: @Model.Email</p>
+        </div>
+        <div>
+            <p>Login: @Model.Login</p>
+        </div>
     </div>
 
-    <div>
-        <form method="get" asp-controller="Article" asp-action="WriteArticle">
-            <button class="btn-success" type="submit" >Добавить статью</button>
-        </form>
-    </div>
+    <div class="lgn-form">
+        @if (User.Identities.FirstOrDefault().Name == Model.Email)
+        {
+            <form method="get" asp-controller="Author" asp-action="EditAuthor">
+                <button class="btn-success frm-btn-two m-l-0" type="submit">Изменить</button>
+            </form>
 
+            <form method="get" asp-controller="Article" asp-action="WriteArticle">
+                <button class="btn-success frm-btn-two m-l-0" type="submit">Добавить статью</button>
+            </form>
+        }
+    </div>
 </div>

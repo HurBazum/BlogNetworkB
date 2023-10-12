@@ -20,17 +20,21 @@ namespace BlogNetworkB.Infrastructure.Mapping
     {
         public MappingProfile()
         {
+            CreateMap<UpdateAuthorRequestViewModel, UpdateAuthorRequest>();
             CreateMap<UpdateAuthorRequest, UpdateAuthorQuery>();
+
             CreateMap<UpdateCommentRequest, UpdateCommentQuery>();
+
             CreateMap<UpdateArticleRequest, UpdateArticleQuery>();
+
             CreateMap<UpdateTagRequest, UpdateTagQuery>();
 
             CreateMap<RegisterViewModel, Author>();
             CreateMap<ArticleViewModel, Article>();
-            CreateMap<Article, ArticleViewModel>();
+            CreateMap<Article, ArticleViewModel>().ForMember("CreatorId", avm => avm.MapFrom(a => a.AuthorId));
             CreateMap<TagViewModel, Tag>();
             CreateMap<Tag, TagViewModel>();
-            CreateMap<Author, AuthorViewModel>();
+            CreateMap<Author, AuthorViewModel>().ForMember("AuthorId", avm => avm.MapFrom(a => a.Id));
             CreateMap<AuthorViewModel, Author>();
             CreateMap<Comment, CommentViewModel>();
             CreateMap<CreateCommentViewModel, Comment>();

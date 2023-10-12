@@ -2,6 +2,7 @@
 {
     public class AuthorViewModel : RegisterViewModel
     {
+        public int AuthorId { get; set; }
         public int CommentsCount { get; set; }
         public int ArticlesCount { get; set; }
         public List<string> Roles { get; set; } = new List<string>();

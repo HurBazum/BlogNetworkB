@@ -4,7 +4,7 @@
 
 @model BlogNetworkB.Models.Article.ArticleViewModel
 
-<div class="articl-blck light-shadow">
+<div class="articl-blck page-blck light-shadow">
     <form class="lgn-form pdng-rem06" method="post" asp-controller="Article" asp-action="PublicArticle">
         <div asp-validation-summary="ModelOnly" />
         <div class="">
@@ -14,8 +14,8 @@
             <textarea class="article pdng-norm mrg-one-bttm no-brdr" asp-for="Content" placeholder="Напишите статью. . ."></textarea>
         </div>
         <div class="btn-flex-blck">
-            <button class="btn-outline-success frm-btn-two" type="submit">Публикация</button>
-            <button class="btn-outline-danger frm-btn-two" type="reset">Очистить</button>
+            <button class="btn-success frm-btn-two" type="submit">Публикация</button>
+            <button class="btn-danger frm-btn-two" type="reset">Очистить</button>
         </div>
     </form>
 </div>

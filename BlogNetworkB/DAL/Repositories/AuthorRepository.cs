@@ -43,6 +43,14 @@ namespace BlogNetworkB.DAL.Repositories
             await _blogContext.SaveChangesAsync();
         }
 
+        public async Task AddRole(Author author, Role role)
+        {
+            author.Roles.Add(role);
+            var entry = _blogContext.Entry(author);
+            entry.State = EntityState.Modified;
+            await _blogContext.SaveChangesAsync();
+        }
+
         public async Task<Author> GetAuthorById(int id) => await _blogContext.Authors.FirstOrDefaultAsync(a => a.Id == id);
         public async Task<Author> GetAuthorByEmail(string email) => await _blogContext.Authors.FirstOrDefaultAsync(a => a.Email == email);
         public async Task<Author[]> GetAll() => await _blogContext.Authors.ToArrayAsync();

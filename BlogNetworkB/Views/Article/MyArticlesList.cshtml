@@ -8,12 +8,11 @@
 {
     foreach(var avm in Model.Articles)
     {
-        <div class="light-shadow title-container">
-            <a>@avm.Title</a>
+        <div class="page-block light-shadow title-container">
+            <div class="article-mini">
+                <a>@avm.Title</a>
+                <p>@avm.CreatedDate</p>
+            </div>
         </div>
     }
 }
-
-<div>
-    <button class="btn-success" type="submit" asp-controller="Article" asp-action="RedirectToWriteArticle">Добавить статью</button>
-</div>

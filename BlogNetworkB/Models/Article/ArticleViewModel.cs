@@ -4,6 +4,8 @@ namespace BlogNetworkB.Models.Article
 {
     public class ArticleViewModel
     {
+        public int CreatorId { get; set; }
+
         [Required]
         [MinLength(5, ErrorMessage = "Минимальная длина заголовка - 5 символов")]
         [MaxLength(40, ErrorMessage = "Максимальная длина заголовка - 40 символов")]
