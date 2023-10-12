@@ -22,14 +22,14 @@
             </form>
             @if(User.IsInRole("Moderator"))
             {
-            <form class="width-20" method="get" asp-controller="Article" asp-action="RewriteArticle">
+                <form class="width-20" method="get" asp-controller="Article" asp-action="RewriteArticle">
                     <input class="id-input" name="id" value="@Model.ArticleId" />
                 <button class="btn-warning" type="submit">Изменить</button>
                 </form>
 
                 <form class="width-20" method="post" asp-controller="Article" asp-action="DeleteArticle">
                     <input class="id-input" name="id" value="@Model.ArticleId" />
-                <button class="btn-danger" type="submit">Удалить</button>
+                    <button class="btn-danger" type="submit">Удалить</button>
                 </form>
             }
         </div>

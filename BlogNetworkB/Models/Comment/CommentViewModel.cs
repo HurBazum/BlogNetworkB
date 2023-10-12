@@ -2,8 +2,8 @@
 {
     public class CommentViewModel : CreateCommentViewModel
     {
-
-        public string Article { get; set; }
-        public string Author { get; set; }
+        public int CommentId { get; set; }
+        public string ArticleName { get; set; }
+        public string AuthorName { get; set; }
     }
 }

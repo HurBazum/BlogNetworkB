@@ -42,8 +42,9 @@ namespace BlogNetworkB.Infrastructure.Mapping
 
             CreateMap<Author, AuthorViewModel>().ForMember("AuthorId", avm => avm.MapFrom(a => a.Id));
             CreateMap<AuthorViewModel, Author>();
-            CreateMap<Comment, CommentViewModel>();
+            CreateMap<Comment, CommentViewModel>().ForMember("CommentId", cvm => cvm.MapFrom(c => c.Id));
             CreateMap<CreateCommentViewModel, Comment>();
+            CreateMap<UpdateCommentRequestViewModel, UpdateCommentRequest>();
             CreateMap<Role, RoleViewModel>().ForMember("RoleId", rvm => rvm.MapFrom(r => r.Id));
         }
     }

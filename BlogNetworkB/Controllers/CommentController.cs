@@ -5,6 +5,8 @@ using BlogNetworkB.Models.Comment;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography.Xml;
 using Microsoft.AspNetCore.Authorization;
+using BlogNetworkB.BLL.Models.Comment;
+using BlogNetworkB.DAL.Queries.Comment;
 
 namespace BlogNetworkB.Controllers
 {
@@ -41,8 +43,17 @@ namespace BlogNetworkB.Controllers
             }
 
             var comments = await _commentRepository.GetCommentByAuthor(author);
+            
+            var cvm = _mapper.Map<CommentViewModel[]>(comments);
 
-            CommentListViewModel clvm = new() { Comments = _mapper.Map<CommentViewModel[]>(comments) };
+
+            for(int i = 0; i < comments.Length; i++)
+            {
+                cvm[i].AuthorName = author.Login;
+                cvm[i].ArticleName = _articleRepository.GetArticleById(comments[i].ArticleId).Result.Title;
+            }
+
+            CommentListViewModel clvm = new() { Comments = cvm };
 
             return View("CommentsList", clvm);
         }
@@ -60,8 +71,8 @@ namespace BlogNetworkB.Controllers
             {
                 var author = _authorRepository.GetAuthorById(view.AuthorId).Result;
                 var article = _articleRepository.GetArticleById(view.ArticleId).Result;
-                view.Author = author.FirstName + " " + author.LastName;
-                view.Article = article.Title;
+                view.AuthorName = author.Login;
+                view.ArticleName = article.Title;
             }
 
             return View(new CommentListViewModel { Comments = cvm });
@@ -89,13 +100,40 @@ namespace BlogNetworkB.Controllers
 
                 await _commentRepository.AddComment(comment);
 
-                int id = ccvm.ArticleId;
 
                 return RedirectToAction("Index", "Home");
-                //return RedirectToAction("ReadArticle", id);
             }
 
             return View("WriteComment", ccvm);
+        }
+
+        [Authorize]
+        [Route("/[controller]/Author/EditComment")]
+        [HttpGet]
+        public async Task<IActionResult> EditComment(int id)
+        {
+            var comment = await _commentRepository.GetCommentById(id);
+            UpdateCommentRequestViewModel ucrvm = new() { CommentId = comment.Id, NewContent = comment.Content };
+
+            return View(ucrvm);
+        }
+
+        [Authorize]
+        [Route("/[controller]/Author/EditComment")]
+        [HttpPost]
+        public async Task<IActionResult> ConfirmEditComment([FromForm] UpdateCommentRequestViewModel ucvm)
+        {
+            if (ModelState.IsValid)
+            {
+                var comment = await _commentRepository.GetCommentById(ucvm.CommentId);
+
+                var ucr = _mapper.Map<UpdateCommentRequest>(ucvm);
+
+                await _commentRepository.UpdateComment(comment, _mapper.Map<UpdateCommentQuery>(ucr));
+
+                return RedirectToAction("CommentsList");
+            }
+            return View("EditComment", ucvm.CommentId);
         }
     }
 }

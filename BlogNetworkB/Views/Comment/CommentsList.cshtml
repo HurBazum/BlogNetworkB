@@ -9,7 +9,7 @@
     {
         <div class="pdng-norm b-border">
             <div class="r-t-login caption-common">
-                <h5>@cvm.Author об @cvm.Article</h5>
+                <h5>@cvm.AuthorName об @cvm.ArticleName</h5>
                 <label>@cvm.CreatedDate</label>
             </div>
             <div class="start-flex-blck r-t-login flex-d-column">
@@ -18,23 +18,23 @@
                     @cvm.Content
                 </div>
 
-                <div class="start-flex-blck r-t-login mrg-one-bttm">
+                <div class="btn-flex-blck">
 
-                    <form class="mrg-mini-right" method="get" asp-controller="Author" asp-action="AuthorPage">
+                    <form class="width-20" method="get" asp-controller="Author" asp-action="AuthorPage">
                         <input class="id-input" name="id" value="@cvm.AuthorId" />
                         <button class="btn-success" type="submit">К автору</button>
                     </form>
 
-                    <form class="mrg-mini-right" method="get" asp-controller="Article" asp-action="ReadArticle">
-                        <input class="id-input" name="id" value="@cvm.AuthorId" />
+                    <form class="width-20" method="get" asp-controller="Article" asp-action="ReadArticle">
+                        <input class="id-input" name="id" value="@cvm.ArticleId" />
                         <button class="btn-success" type="submit">К статье</button>
                     </form>
 
                     @if (User.IsInRole("Moderator"))
                     {
-                        <form method="get" asp-controller="Author" asp-action="EditAuthor">
-                            <input class="id-input" name="id" value="@cvm.AuthorId" />
-                            <button class="btn-warning w-h-20-15" type="submit">Изменить</button>
+                        <form class="width-20" method="get" asp-controller="Comment" asp-action="EditComment">
+                            <input class="id-input" name="id" value="@cvm.CommentId" />
+                            <button class="btn-warning" type="submit">Изменить</button>
                         </form>
                     }
 
