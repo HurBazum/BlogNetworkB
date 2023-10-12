@@ -20,7 +20,11 @@
         <!--<a class="text-dark mrg-mini-left w-text-decor" asp-area="" asp-controller="Article" asp-action="MyArticlesList">@Model.ArticlesCount</a>-->
     </div>
     <div class="start-flex-blck r-t-login">
-        <p>Комментарии:</p> <a class="text-dark mrg-mini-left w-text-decor">@Model.CommentsCount</a>
+        <p>Комментарии:</p> 
+        <form method="get" asp-controller="Comment" asp-action="AuthorCommentsList">
+            <input class="id-input" name="id" asp-for="AuthorId" />
+            <button class="btn-w-decor" type="submit">@Model.CommentsCount</button>
+        </form>
     </div>
 
     <div>

@@ -4,14 +4,14 @@
 
 @model BlogNetworkB.Models.Tag.TagViewModel
 
-<div class="articl-blck light-shadow">
-    <form class="lgn-form pdng-rem06" method="post" asp-controller="Tag" asp-action="ConfirmCreateTag">
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
+    <form class="pdng-rem06" method="post" asp-controller="Tag" asp-action="ConfirmCreateTag">
         <div asp-validation-summary="ModelOnly" />
-        <div>
-            <input asp-for="Content" placeholder="Введите тег" />
+        <div class="lgn-form mrg-one-bttm">
+            <input class="" asp-for="Content" placeholder="Введите тег" />
         </div>
-        <div class="btn-grid-blck">
-            <button class="btn-outline-success frm-btn-one" type="submit">Добавить</button>
+        <div class="btn-grid-blck mrg-one-bttm">
+            <button class="btn-success frm-btn-one" type="submit">Добавить</button>
         </div>
     </form>
 </div>

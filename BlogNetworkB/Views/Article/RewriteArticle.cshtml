@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "RewriteArticle";
+}
+
+@model BlogNetworkB.Models.Article.UpdateArticleRequestViewModel
+
+<div class="articl-blck page-blck light-shadow">
+    <form class ="lgn-form pdng-rem06" method="post" asp-controller="Article" asp-action="ConfirmRewriteArticle">
+        <div asp-validation-summary="ModelOnly" />
+        <input class="id-input" asp-for="ArticleId" value="@Model.ArticleId" />
+        <div>
+            <input class="no-brdr caption-field pdng-norm mrg-one-bttm" asp-for="NewTitle" placeholder="Заголовок" value="@Model.NewTitle" />
+        </div>
+        <div class="article-div">
+            <textarea class="article pdng-norm mrg-one-bttm no-brdr" asp-for="NewContent" placeholder="Напишите статью. . .">@Model.NewContent</textarea>
+        </div>
+
+        <div class="btn-flex-blck">
+            <button class="btn-success frm-btn-two" type="submit">Публикация</button>
+            <button class="btn-danger frm-btn-two" type="reset">Очистить</button>
+        </div>
+    </form>
+</div>

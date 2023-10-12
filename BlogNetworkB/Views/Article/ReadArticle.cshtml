@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "ReadArticle";
+}
+
+@model BlogNetworkB.Models.Article.ArticleViewModel
+
+<div class="page-blck light-shadow" style="padding-bottom:2vh;">
+
+    <div class="caption-common pdng-norm">
+            <h5>@Model.Title</h5>
+            <p>@Model.CreatedDate</p>
+        </div>
+
+        <div class="article-div pdng-norm" style="padding-top:0;">
+            @Model.Content
+        </div>
+
+        <div class="btn-flex-blck">
+            <form class="width-20" method="get" asp-controller="Comment" asp-action="WriteComment">
+                <input class="id-input" name="id" value="@Model.ArticleId"/>
+                <button class="btn-success" type="submit">Комментировать</button>
+            </form>
+            @if(User.IsInRole("Moderator"))
+            {
+            <form class="width-20" method="get" asp-controller="Article" asp-action="RewriteArticle">
+                    <input class="id-input" name="id" value="@Model.ArticleId" />
+                <button class="btn-warning" type="submit">Изменить</button>
+                </form>
+
+                <form class="width-20" method="post" asp-controller="Article" asp-action="DeleteArticle">
+                    <input class="id-input" name="id" value="@Model.ArticleId" />
+                <button class="btn-danger" type="submit">Удалить</button>
+                </form>
+            }
+        </div>
+</div>

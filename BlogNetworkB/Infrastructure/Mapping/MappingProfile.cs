@@ -30,10 +30,16 @@ namespace BlogNetworkB.Infrastructure.Mapping
             CreateMap<UpdateTagRequest, UpdateTagQuery>();
 
             CreateMap<RegisterViewModel, Author>();
+
             CreateMap<ArticleViewModel, Article>();
-            CreateMap<Article, ArticleViewModel>().ForMember("CreatorId", avm => avm.MapFrom(a => a.AuthorId));
+            CreateMap<Article, ArticleViewModel>()
+                .ForMember("CreatorId", avm => avm.MapFrom(a => a.AuthorId))
+                .ForMember("ArticleId", avm => avm.MapFrom(a => a.Id));
+            CreateMap<UpdateArticleRequestViewModel, UpdateArticleRequest>();
+
             CreateMap<TagViewModel, Tag>();
             CreateMap<Tag, TagViewModel>();
+
             CreateMap<Author, AuthorViewModel>().ForMember("AuthorId", avm => avm.MapFrom(a => a.Id));
             CreateMap<AuthorViewModel, Author>();
             CreateMap<Comment, CommentViewModel>();

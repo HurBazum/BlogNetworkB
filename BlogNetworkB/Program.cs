@@ -27,7 +27,7 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = "Cookies")
                 {
                     options.Events = new Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationEvents
                     {
-                        OnRedirectToLogin =redirectContext =>
+                        OnRedirectToLogin = redirectContext =>
                         {
                             redirectContext.HttpContext.Response.StatusCode = 401;
                             return Task.CompletedTask;

@@ -191,9 +191,16 @@ namespace BlogNetworkB.Controllers
         {
             var author = await _authorRepository.GetAuthorById(id);
 
-            await _authorRepository.DeleteAuthor(author);
+            if (author.Email == HttpContext.User.Claims.FirstOrDefault().Value)
+            {
+                return View("/Views/Alert/SomethingWrong.cshtml");
+            }
+            else
+            {
+                await _authorRepository.DeleteAuthor(author);
 
-            return RedirectToAction("AuthorsList");
+                return RedirectToAction("AuthorsList");
+            }
         }
 
         [Authorize]

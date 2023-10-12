@@ -26,14 +26,8 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="Register">Регистрация</a>
-                        </li>
                         @if(User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="Logout">Выйти</a>
-                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Role" asp-action="RoleList">Роли</a>
                             </li>
@@ -41,14 +35,20 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="AuthorsList">Авторы</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Tag" asp-action="TagList">Статьи</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Article" asp-action="ArticleList">Статьи</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Tag" asp-action="TagList">Теги</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="Logout">Выйти</a>
+                            </li>
                         }
                         else
                         {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="Register">Регистрация</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Author" asp-action="Login">Войти</a>
                             </li>

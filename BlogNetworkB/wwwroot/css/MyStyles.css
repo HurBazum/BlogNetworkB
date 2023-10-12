@@ -2,6 +2,8 @@
     box-shadow: 0 0 0.8em;
 }
 
+
+
 .main-blck{
     padding:1.4em;
     background-color:white;
@@ -27,6 +29,27 @@
     display:flex;
     justify-content:space-between;
     width:85vh;
+}
+
+.caption-common {
+    display: flex;
+    justify-content: space-between;
+    width:inherit;
+}
+
+.comment-area{
+    min-height:15vh;
+    background-color:beige;
+    padding:0.3em;
+    margin-bottom:1.5vh;
+}
+
+.description-lbl {
+    display:block;
+    padding: 0.3em 0.3em 0.3em 0;
+    display: block;
+    width: inherit;
+    background-color: #f8f9fa;
 }
 
 .page-blck {
@@ -149,6 +172,10 @@
     margin-left: 0.3em;
 }
 
+.mrg-mini-right {
+    margin-left: 0.3em;
+}
+
 .m-l-0{
     margin-left:0;
 }
@@ -161,10 +188,26 @@
     text-decoration:none;
 }
 
+.b-border{
+    border-bottom:0.15em solid #9c9770;
+}
+
+.w-h-20-15{
+    width:20%;
+    height:15%;
+}
+
 .custom-color-0 {
     background-color: #f2f6fc;
 }
 
 .id-input{
     display:none;
+}
+
+.width-20{
+    width:20%;
+}
+.width-20 > button{
+    width:100%;
 }

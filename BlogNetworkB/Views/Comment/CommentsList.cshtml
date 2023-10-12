@@ -1,0 +1,45 @@
+﻿@{
+    ViewData["Title"] = "CommentsList";
+}
+
+@model BlogNetworkB.Models.Comment.CommentListViewModel
+
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
+    @foreach (var cvm in Model.Comments)
+    {
+        <div class="pdng-norm b-border">
+            <div class="r-t-login caption-common">
+                <h5>@cvm.Author об @cvm.Article</h5>
+                <label>@cvm.CreatedDate</label>
+            </div>
+            <div class="start-flex-blck r-t-login flex-d-column">
+
+                <div class="comment-area">
+                    @cvm.Content
+                </div>
+
+                <div class="start-flex-blck r-t-login mrg-one-bttm">
+
+                    <form class="mrg-mini-right" method="get" asp-controller="Author" asp-action="AuthorPage">
+                        <input class="id-input" name="id" value="@cvm.AuthorId" />
+                        <button class="btn-success" type="submit">К автору</button>
+                    </form>
+
+                    <form class="mrg-mini-right" method="get" asp-controller="Article" asp-action="ReadArticle">
+                        <input class="id-input" name="id" value="@cvm.AuthorId" />
+                        <button class="btn-success" type="submit">К статье</button>
+                    </form>
+
+                    @if (User.IsInRole("Moderator"))
+                    {
+                        <form method="get" asp-controller="Author" asp-action="EditAuthor">
+                            <input class="id-input" name="id" value="@cvm.AuthorId" />
+                            <button class="btn-warning w-h-20-15" type="submit">Изменить</button>
+                        </form>
+                    }
+
+                </div>
+            </div>
+        </div>
+    }
+</div>

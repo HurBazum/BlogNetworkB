@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "WriteComment";
+}
+
+@model BlogNetworkB.Models.Comment.CreateCommentViewModel
+
+<div class="page-blck main-blck light-shadow">
+    <h3>Добавление комментария</h3>
+    <form method="post" asp-controller="Comment" asp-action="ConfirmWriteComment">
+        <div asp-validation-summary="ModelOnly"/>
+        <input asp-for="@Model.ArticleId" value="@Model.ArticleId" />
+        <div class="lgn-form">
+            <label asp-for="Content"></label>
+            <textarea asp-for="Content"></textarea>
+            <span asp-validation-for="Content"></span>
+        </div>
+        <div>
+
+            <button class="btn-success" type="submit">Отправить</button>
+        </div>
+    </form>
+</div>

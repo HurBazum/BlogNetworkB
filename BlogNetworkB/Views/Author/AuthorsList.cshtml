@@ -7,33 +7,33 @@
 <div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
     @foreach(var avm in Model.Authors)
     {
-        <div class="pdng-norm">
+        <div class="pdng-norm b-border">
             <h3>@avm.GetFullName()</h3>
             @foreach(var role in avm.Roles)
             {
                 <p>@role</p>
             }
-            <div class="start-flex-blck r-t-login">
+            <div class="btn-flex-blck">
 
-                <form method="get" asp-controller="Author" asp-action="AuthorPage">
+                <form class="width-20" method="get" asp-controller="Author" asp-action="AuthorPage">
                     <input class="id-input" name="id" value="@avm.AuthorId" />
                     <button class="btn-success" type="submit">Просмотр</button>
                 </form>
 
                 @if(User.IsInRole("Admin"))
                 {
-                    <form method="post" asp-controller="Author" asp-action="DeleteAuthor">
+                    <form class="width-20" method="post" asp-controller="Author" asp-action="DeleteAuthor">
                         <input class="id-input" name="id" value="@avm.AuthorId" />
                         <button class="btn-danger" type="submit">Удалить</button>
                     </form>
-                    <form method="get" asp-controller="Role" asp-action="AddRole">
+                    <form class="width-20" method="get" asp-controller="Role" asp-action="AddRole">
                         <input class="id-input" name="id" value="@avm.AuthorId" />
                         <button class="btn-warning" type="submit">Добавить роль</button>
                     </form>
                 }
                 @if(User.IsInRole("Moderator"))
                 {
-                    <form method="get" asp-controller="Author" asp-action="EditAuthor">
+                    <form class="width-20" method="get" asp-controller="Author" asp-action="EditAuthor">
                         <input class="id-input" name="id" value="@avm.AuthorId" />
                         <button class="btn-warning" type="submit">Изменить</button>
                     </form>
