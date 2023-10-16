@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ConnectionLib.Migrations
+namespace BlogNetworkB.Migrations
 {
     /// <inheritdoc />
     public partial class InitDB : Migration

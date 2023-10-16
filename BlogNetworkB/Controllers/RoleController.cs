@@ -51,24 +51,11 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/MyRoles")]
         public async Task<IActionResult> MyRoleList() 
         {
-            if (!User.IsInRole("Admin"))
-            {
-                var myRoleList = HttpContext.User.Claims.Where(value => value.Type == ClaimsIdentity.DefaultRoleClaimType).Select(v => v.Value);
+            var myRoleList = HttpContext.User.Claims.Where(value => value.Type == ClaimsIdentity.DefaultRoleClaimType).Select(v => v.Value);
 
-                MyRoleViewModel mrvm = new() { Roles = myRoleList.ToArray() };
+            MyRoleViewModel mrvm = new() { Roles = myRoleList.ToArray() };
 
-                return View(mrvm);
-            }
-            else
-            {
-                var author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
-
-                var roles = await _authorRepository.GetAuthorsRoles(author);
-
-                var rolesArray = _mapper.Map<RoleViewModel[]>(roles);
-
-                return View("RoleList", new RoleListViewModel { Roles = rolesArray });
-            }
+            return View(mrvm);
         }
 
         #endregion

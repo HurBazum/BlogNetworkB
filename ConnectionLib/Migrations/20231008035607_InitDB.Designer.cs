@@ -264,15 +264,5 @@ namespace BlogNetworkB.Migrations
                 });
 #pragma warning restore 612, 618
         }
-
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            base.Down(migrationBuilder);
-        }
-
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
