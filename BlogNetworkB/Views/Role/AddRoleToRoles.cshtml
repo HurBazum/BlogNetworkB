@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "AddRoleToRoles";
+}
+
+@model BlogNetworkB.Models.Role.RoleViewModel
+
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
+    <form method="post" asp-controller="Role" asp-action="ConfirmAddRoleToRoles">
+        <div asp-validation-summary="ModelOnly" />
+        <label asp-for="Name"></label>
+        <input asp-for="Name" placeholder="Название роли. . ." />
+        <span asp-validation-for="Name"></span>
+
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" placeholder="Заполните описание роли. . ."></textarea>
+        <span asp-validation-for="Description"></span>
+
+        <div class="btn-flex-blck">
+            <button class="btn-success" type="submit">Добавить</button>
+        </div>
+    </form>
+</div>

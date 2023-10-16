@@ -12,6 +12,7 @@ namespace ConnectionLib.DAL.Repositories.Interfaces
         public Task<Author[]> GetAll();
         public Task UpdateAuthor(Author author, UpdateAuthorQuery updateAuthorQuery);
         public Task AddRole(Author author, Role role);
+        public Task DeleteAuthorRole(Author author, Role role);
         public Task<Role[]> GetAuthorsRoles(Author author);
     }
 }

@@ -40,6 +40,10 @@
     <div class="lgn-form">
         @if (User.Identities.FirstOrDefault().Name == Model.Email)
         {
+            <form method="get" asp-controller="Role" asp-action="MyRoleList">
+                <button class="btn-success frm-btn-two m-l-0" type="submit">Мои роли</button>
+            </form>
+
             <form method="get" asp-controller="Author" asp-action="EditAuthor">
                 <button class="btn-success frm-btn-two m-l-0" type="submit">Изменить</button>
             </form>

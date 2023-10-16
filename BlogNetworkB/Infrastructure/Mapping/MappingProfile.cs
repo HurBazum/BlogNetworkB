@@ -13,6 +13,8 @@ using BlogNetworkB.Models.Article;
 using BlogNetworkB.Models.Comment;
 using BlogNetworkB.Models.Tag;
 using BlogNetworkB.Models.Role;
+using BlogNetworkB.BLL.Models.Role;
+using ConnectionLib.DAL.Queries.Role;
 
 namespace BlogNetworkB.Infrastructure.Mapping
 {
@@ -49,6 +51,9 @@ namespace BlogNetworkB.Infrastructure.Mapping
 
             // role
             CreateMap<Role, RoleViewModel>().ForMember("RoleId", rvm => rvm.MapFrom(r => r.Id));
+            CreateMap<RoleViewModel, Role>();
+            CreateMap<UpdateRoleRequestViewModel, UpdateRoleDescriptionRequest>();
+            CreateMap<UpdateRoleDescriptionRequest, UpdateRoleQuery>();
         }
     }
 }

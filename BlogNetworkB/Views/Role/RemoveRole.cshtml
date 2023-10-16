@@ -1,0 +1,24 @@
+﻿@{
+    ViewData["Title"] = "RemoveRole";
+}
+
+@model BlogNetworkB.Models.Role.RoleViewModel
+
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
+    <div class="btn-grid-blck">
+        <h3>Удаление роли у [@Model.AuthorId] пользователя</h3>
+    </div>
+
+    <form method="post" asp-controller="Role" asp-action="ConfirmRemoveRole">
+        <div asp-validation-summary="ModelOnly" />
+        <div class="fields-container">
+            <input class="id-input" asp-for="AuthorId" />
+            <label asp-for="RoleId"></label>
+            <input asp-for="RoleId" />
+        </div>
+
+        <div class="btn-grid-blck">
+            <button class="frm-btn-one btn-danger" type="submit">Удалить</button>
+        </div>
+    </form>
+</div>

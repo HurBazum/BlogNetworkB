@@ -3,7 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using BlogNetworkB.Models.Role;
+using ConnectionLib.DAL.Enteties;
+using ConnectionLib.DAL.Queries;
 using System.Security.Claims;
+using BlogNetworkB.BLL.Models.Role;
+using ConnectionLib.DAL.Queries.Role;
 
 namespace BlogNetworkB.Controllers
 {
@@ -69,7 +73,7 @@ namespace BlogNetworkB.Controllers
 
         #endregion
 
-        #region Добавление роли пользователю
+        #region Добавление/удаление роли пользователю
 
         [Authorize]
         [HttpGet]
@@ -104,6 +108,109 @@ namespace BlogNetworkB.Controllers
             return RedirectToAction("AuthorsList", "Author");
         }
 
+        [Authorize]
+        [HttpGet]
+        [Route("/[controller]/AuthorRoles/RemoveRole")]
+        public IActionResult RemoveRole(int id) => View(new RoleViewModel { AuthorId = id});
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/AuthorRoles/RemoveRole")]
+        public async Task<IActionResult> ConfirmRemoveRole([FromForm]RoleViewModel rvm)
+        {
+            var role = await _roleRepository.GetRoleById(rvm.RoleId);
+            var author = await _authorRepository.GetAuthorById(rvm.AuthorId);
+
+            // т.к. метод get отказывается принимать
+            // roleViewModel.AuthorId
+            if (role == null)
+            {
+                int id = rvm.AuthorId;
+                return View("RemoveRole", id);
+            }
+
+            // если автор не имеет такую роль
+            bool hasRole = (_authorRepository.GetAuthorsRoles(author).Result.Contains(role) != true);
+            if (hasRole)
+            {
+                return View("/Views/Alert/SomethingWrong.cshtml");
+            }
+
+            await _authorRepository.DeleteAuthorRole(author, role);
+
+            return RedirectToAction("AuthorsList", "Author");
+        }
+
         #endregion
+
+        [Authorize]
+        [HttpGet]
+        [Route("/[controller]/AddNewRole")]
+        public IActionResult AddRoleToRoles() => View();
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/AddNewRole")]
+        public async Task<IActionResult> ConfirmAddRoleToRoles([FromForm]RoleViewModel rvm)
+        {
+            if(ModelState.IsValid)
+            {
+                var role = _mapper.Map<Role>(rvm);
+
+                try
+                {
+                    await _roleRepository.AddRole(role);
+
+                    return RedirectToAction("RoleList");
+                }
+                catch
+                {
+                    return View("/Views/Alert/SomethingWrong.cshtml");
+                }
+            }
+
+            return View("AddRoleToRoles");
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("/[controller]/RewriteRole")]
+        public async Task<IActionResult> RewriteRole(int id)
+        {
+            var role = await _roleRepository.GetRoleById(id);
+
+            return View("EditRoleDescription", new UpdateRoleRequestViewModel { RoleId = id, RoleName = role.Name, NewDescription = role.Description });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/RewriteRole")]
+        public async Task<IActionResult> ConfirmRewriteRole([FromForm]UpdateRoleRequestViewModel urrvm)
+        {
+            if(ModelState.IsValid)
+            {
+                var request = _mapper.Map<UpdateRoleDescriptionRequest>(urrvm);
+
+                var role = await _roleRepository.GetRoleById(urrvm.RoleId);
+
+                await _roleRepository.UpdateRole(role, _mapper.Map<UpdateRoleQuery>(request));
+
+                return RedirectToAction("RoleList");
+            }
+
+            int id = urrvm.RoleId;
+
+            return RedirectToAction("EditRoleDescription", id);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/DeleteRole")]
+        public async Task<IActionResult> DeleteRole(int id)
+        {
+            var role = await _roleRepository.GetRoleById(id);
+            await _roleRepository.DeleteRole(role);
+            return RedirectToAction("RoleList");
+        }
     }
 }

@@ -6,17 +6,41 @@
 
 <div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column lgn-form">
     <h4 style="display:block;width:100%;text-align:center;">Все роли</h4>
-    <table class="table table-striped t-center-txt">
-        <tr>
-            <td>Id</td>
-            <td>Название</td>
-        </tr>
-        @foreach(var role in Model.Roles)
-        {
-            <tr>
-                <td>@role.RoleId</td>
-                <td>@role.Name</td>
-            </tr>
-        }
-    </table>
+    @foreach(var role in Model.Roles)
+    {
+        <div class="b-border width-100 mrg-one-bttm">
+            <div class="btn-flex-blck">
+                <span class="p-1">@role.RoleId</span>
+                <span class="p-1">@role.Name</span>
+            </div>
+            <textarea class="comment-area role-area" readonly>@role.Description</textarea>
+
+            <div class="btn-flex-blck mrg-one-bttm">
+
+                @if(User.IsInRole("Admin"))
+                {
+                    <form class="width-20 mrg-one-bttm" method="get" asp-controller="Role" asp-action="RewriteRole">
+                        <input class="id-input" name="id" value="@role.RoleId" />
+                        <button class="btn-warning" type="submit">Изменить(описание)</button>
+                    </form>
+
+                    <form class="width-20 mrg-one-bttm" method="post" asp-controller="Role" asp-action="DeleteRole">
+                        <input class="id-input" name="id" value="@role.RoleId" />
+                        <button class="btn-danger" type="submit">Удалить</button>
+                    </form>
+                }
+
+            </div>
+        </div>
+    }
+
+    @if(User.IsInRole("Admin"))
+    {
+        <div class="btn-flex-blck">
+            <form class="width-20" method="get" asp-controller="Role" asp-action="AddRoleToRoles">
+                <button class="btn-success" type="submit">Добавить роль</button>
+            </form>
+        </div>
+    }
+
 </div>

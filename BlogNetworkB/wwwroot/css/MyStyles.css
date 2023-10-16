@@ -25,6 +25,12 @@
     display:inline-flex;
 }
 
+.width-100{
+    width:100%;
+}
+
+
+
 .article-mini{
     display:flex;
     justify-content:space-between;
@@ -42,6 +48,14 @@
     background-color:beige;
     padding:0.3em;
     margin-bottom:1.5vh;
+}
+
+.role-area {
+    width: inherit;
+    max-height: 15vh;
+    font-size: inherit;
+    resize: none;
+    border: none;
 }
 
 .description-lbl {
@@ -212,8 +226,17 @@
     width:100%;
 }
 
+/* spans */
 .tag-span {
     background-color: magenta;
+    padding: 0 0.3em;
+    border: 2px solid cadetblue;
+    border-radius: 2vh;
+    margin: 0.15em;
+}
+
+.role-span {
+    background-color: cadetblue;
     padding: 0 0.3em;
     border: 1px solid magenta;
     border-radius: 2vh;

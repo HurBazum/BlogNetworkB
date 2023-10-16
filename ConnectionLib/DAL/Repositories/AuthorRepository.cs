@@ -51,6 +51,13 @@ namespace ConnectionLib.DAL.Repositories
             await _blogContext.SaveChangesAsync();
         }
 
+        public async Task DeleteAuthorRole(Author author, Role role)
+        {
+            var a = _blogContext.Authors.Include(a => a.Roles).Where(a => a.Id == author.Id).FirstOrDefault();
+            a.Roles.Remove(role);
+            await _blogContext.SaveChangesAsync();
+        }
+
         public async Task<Author> GetAuthorById(int id) => await _blogContext.Authors.FirstOrDefaultAsync(a => a.Id == id);
         public async Task<Author> GetAuthorByEmail(string email) => await _blogContext.Authors.FirstOrDefaultAsync(a => a.Email == email);
         public async Task<Author[]> GetAll() => await _blogContext.Authors.ToArrayAsync();

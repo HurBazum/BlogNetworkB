@@ -7,11 +7,10 @@ using BlogNetworkB.Models.Article;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BlogNetworkB.Models.Account;
-using BlogNetworkB.Models.Tag;
-using System.Collections.ObjectModel;
 
 namespace BlogNetworkB.Controllers
 {
+    [Route("/Article")]
     public class ArticleController : Controller
     {
         readonly IArticleRepository _articleRepository;
@@ -38,7 +37,8 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/NewArticle")]
         public IActionResult WriteArticle()
         {
-            var avm = new ArticleViewModel() { ArticleTags = new List<string>() };
+            var avm = new ArticleViewModel { ArticleTags = new List<string>() };
+
             var tags = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
             
             foreach (var tag in tags)
@@ -49,10 +49,14 @@ namespace BlogNetworkB.Controllers
             return View(avm);
         }
 
+
+        /// <summary>
+        /// пока можно добавлять статьи не указывая теги
+        /// </summary>
         [Authorize]
         [HttpPost]
         [Route("/[controller]/NewArticle")]
-        public async Task<IActionResult> PublicArticle([FromForm] ArticleViewModel articleViewModel, params string[] tags)
+        public async Task<IActionResult> PublicArticle([FromForm]ArticleViewModel articleViewModel, params string[] tags)
         {
             if(ModelState.IsValid)
             {
@@ -66,19 +70,35 @@ namespace BlogNetworkB.Controllers
 
                 article.CreatedDate = DateTime.Now;
 
-                foreach(var key in tags)
+                foreach(var t in tags)
                 {
-                    var tag = await _tagRepository.GetTagByContent(key);
+                    var tag = await _tagRepository.GetTagByContent(t);
                     article.Tags.Add(tag);
                 }
 
-                await _articleRepository.AddArticle(article);
+                try
+                {
+                    await _articleRepository.AddArticle(article);
+                }
+                catch
+                {
+                    return View("/Views/Alert/SomethingWrong.cshtml");
+                }
 
                 var model = _mapper.Map<AuthorViewModel>(author);
                 model.ArticlesCount = _articleRepository.GetArticlesByAuthor(author).Result.Length;
                 model.CommentsCount = _commentRepository.GetCommentByAuthor(author).Result.Length;
 
                 return View("/Views/Author/MyPage.cshtml", model);
+            }
+
+            // чтоб было возможно выбрать из всех тегов, а не только
+            // тех, что были переданны в этот метод
+            var tagsName = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
+
+            foreach (var tag in tagsName)
+            {
+                articleViewModel.ArticleTags!.Add(tag);
             }
 
             return View("WriteArticle", articleViewModel);
@@ -104,6 +124,11 @@ namespace BlogNetworkB.Controllers
             var articles = await _articleRepository.GetArticlesByAuthor(author);
             
             var avmArray = _mapper.Map<ArticleViewModel[]>(articles);
+
+            for(int i = 0; i < articles.Length; i++)
+            {
+                avmArray[i].ArticleTags = _articleRepository.GetArticlesTags(articles[i]).Result.Select(t  => t.Content).ToList();
+            }
 
             foreach (var article in avmArray)
             {

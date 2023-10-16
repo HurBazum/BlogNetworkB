@@ -7,7 +7,7 @@
 
 <div class="articl-blck page-blck light-shadow">
     <form class="lgn-form pdng-rem06" method="post" asp-controller="Article" asp-action="PublicArticle">
-        <div asp-validation-summary="ModelOnly" />
+        <div asp-validation-summary="ModelOnly"/>
         <div class="">
             <input class="no-brdr caption-field pdng-norm mrg-one-bttm" asp-for="Title" placeholder="Заголовок" />
         </div>
@@ -16,7 +16,7 @@
         </div>
 
         <div>
-            @foreach(var key in Model.ArticleTags)
+            @foreach(var key in Model.ArticleTags!)
             {
                 <input type="checkbox" value="@key" name="tags" /><label>@key</label><br />
             }

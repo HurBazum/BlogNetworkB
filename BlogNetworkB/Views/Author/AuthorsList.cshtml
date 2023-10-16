@@ -11,7 +11,7 @@
             <h3>@avm.GetFullName()</h3>
             @foreach(var role in avm.Roles)
             {
-                <p>@role</p>
+                <span class="role-span mrg-one-bttm">@role</span>
             }
             <div class="btn-flex-blck">
 
@@ -26,9 +26,15 @@
                         <input class="id-input" name="id" value="@avm.AuthorId" />
                         <button class="btn-danger" type="submit">Удалить</button>
                     </form>
+
                     <form class="width-20" method="get" asp-controller="Role" asp-action="AddRole">
                         <input class="id-input" name="id" value="@avm.AuthorId" />
                         <button class="btn-warning" type="submit">Добавить роль</button>
+                    </form>
+
+                    <form class="width-20" method="get" asp-controller="Role" asp-action="RemoveRole">
+                        <input class="id-input" name="id" value="@avm.AuthorId" />
+                        <button class="btn-danger" type="submit">Лишить роли</button>
                     </form>
                 }
                 @if(User.IsInRole("Moderator"))

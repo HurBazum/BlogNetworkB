@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "EditRoleDescription";
+}
+
+@model BlogNetworkB.Models.Role.UpdateRoleRequestViewModel
+
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column lgn-form">
+    <form method="post">
+        <div class="b-border width-100 mrg-one-bttm">
+            <input class="id-input" asp-for="RoleId" value="@Model.RoleId" />
+
+            <label asp-for="RoleName"></label><br />
+            <input asp-for="RoleName" value="@Model.RoleName" readonly/><br />
+            <span asp-validation-for="RoleName"></span>
+
+            <label asp-for="NewDescription"></label><br />
+            <textarea class="comment-area role-area" asp-for="NewDescription">@Model.NewDescription</textarea>
+        </div>
+
+        <div class="btn-flex-blck">
+            <div class="width-20">
+                <button class="btn-success" type="submit">Изменить</button>
+            </div>
+        </div>
+    </form>
+</div>
