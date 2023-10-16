@@ -4,11 +4,19 @@
 
 @model BlogNetworkB.Models.Role.RoleListViewModel
 
-<div>
-    @foreach(var role in Model.Roles)
-    {
-        <div>
-            <p>@role.RoleId : @role.Name</p>
-        </div>
-    }
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column lgn-form">
+    <h4 style="display:block;width:100%;text-align:center;">Все роли</h4>
+    <table class="table table-striped t-center-txt">
+        <tr>
+            <td>Id</td>
+            <td>Название</td>
+        </tr>
+        @foreach(var role in Model.Roles)
+        {
+            <tr>
+                <td>@role.RoleId</td>
+                <td>@role.Name</td>
+            </tr>
+        }
+    </table>
 </div>

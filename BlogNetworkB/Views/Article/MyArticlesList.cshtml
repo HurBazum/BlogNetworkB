@@ -3,31 +3,42 @@
 }
 
 @model BlogNetworkB.Models.Article.ArticleListViewModel
-<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
-@if(Model.Articles != null)
-{
-    foreach(var avm in Model.Articles)
-    {
-        <div class="pdng-norm b-border">
-            <div class="caption-common">
-                <h5>@avm.Title</h5>
-                <p>@avm.CreatedDate</p>
-            </div>
 
-            <div>
-                <label style="description-lbl" asp-for="@avm.Description"></label>
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
+    @if(Model.Articles != null)
+    {
+        foreach(var avm in Model.Articles)
+        {
+            <div class="pdng-norm b-border">
+                <div class="caption-common">
+                    <h5>@avm.Title</h5>
+                    <p>@avm.CreatedDate</p>
+                </div>
+
                 <div>
-                    @avm.Description
+                    <label style="description-lbl" asp-for="@avm.Description"></label>
+                    <div>
+                        @avm.Description
+                    </div>
+
+                    <div class="mrg-one-bttm">
+                        @if(avm.ArticleTags != null)
+                        {
+                            @foreach(var tag in avm.ArticleTags)
+                            {
+                                <span class="tag-span">@tag</span>    
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <form method="get" asp-controller="Article" asp-action="ReadArticle">
+                        <input class="id-input" name="id" value="@avm.ArticleId" />
+                        <button class="btn-success" type="submit">Читать</button>
+                    </form>
                 </div>
             </div>
-
-            <div>
-                <form method="get" asp-controller="Article" asp-action="ReadArticle">
-                    <input class="id-input" name="id" value="@avm.ArticleId" />
-                    <button class="btn-success" type="submit">Читать</button>
-                </form>
-            </div>
-        </div>
+        }
     }
-}
 </div>

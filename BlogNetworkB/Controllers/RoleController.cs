@@ -1,4 +1,4 @@
-﻿using BlogNetworkB.DAL.Repositories.Interfaces;
+﻿using ConnectionLib.DAL.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;

@@ -30,11 +30,15 @@
                         <button class="btn-success" type="submit">К статье</button>
                     </form>
 
-                    @if (User.IsInRole("Moderator"))
+                    @if (User.IsInRole("Moderator") || User.Claims.FirstOrDefault().Value == cvm.AuthorName)
                     {
                         <form class="width-20" method="get" asp-controller="Comment" asp-action="EditComment">
                             <input class="id-input" name="id" value="@cvm.CommentId" />
                             <button class="btn-warning" type="submit">Изменить</button>
+                        </form>
+                        <form class="width-20" method="post" asp-controller="Comment" asp-action="DeleteComment">
+                            <input class="id-input" name="id" value="@cvm.CommentId" />
+                            <button class="btn-danger" type="submit">Удалить</button>
                         </form>
                     }
 

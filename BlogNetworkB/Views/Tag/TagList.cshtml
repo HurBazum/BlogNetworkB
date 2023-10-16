@@ -12,19 +12,31 @@
         {
             <div class="pdng-norm b-border mrg-one-bttm">
                 <p class="comment-area">@tvm.Content</p>
+
+                <div class="btn-flex-blck">
+                    @if (User.IsInRole("Moderator"))
+                    {
+                        <form class="width-20" method="get" asp-controller="Tag" asp-action="RewriteTag">
+                            <input class="id-input" name="id" value="@tvm.TagId" />
+                            <button class="btn-warning" type="submit">Изменить</button>
+                        </form>
+
+                        <form class="width-20" method="post" asp-controller="Tag" asp-action="DeleteTag">
+                            <input class="id-input" name="id" value="@tvm.TagId" />
+                            <button class="btn-danger" type="submit">Удалить</button>
+                        </form>
+                    }
+                </div>
             </div>
         }
     }
 
-    @if (User.Identity.IsAuthenticated)
-    {
-        <div class="mrg-one-bttm">
-            <form method="get" asp-controller="Tag" asp-action="CreateTag">
-                <div class="btn-grid-blck">
-                    <button class="btn-success frm-btn-one" type="submit">Добавить тег</button>
-                </div>
+    <div class="btn-flex-blck">
+        @if (User.Identity.IsAuthenticated)
+        {
+            <form class="width-20" method="get" asp-controller="Tag" asp-action="CreateTag">
+                    <button class="btn-success" type="submit">Добавить тег</button>
             </form>
-        </div>
-    }
-
+        }
+    </div>
 </div>

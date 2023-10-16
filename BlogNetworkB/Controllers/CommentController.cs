@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
-using BlogNetworkB.DAL.Repositories.Interfaces;
-using BlogNetworkB.DAL.Enteties;
+using ConnectionLib.DAL.Repositories.Interfaces;
+using ConnectionLib.DAL.Enteties;
 using BlogNetworkB.Models.Comment;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography.Xml;
 using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.BLL.Models.Comment;
-using BlogNetworkB.DAL.Queries.Comment;
+using ConnectionLib.DAL.Queries.Comment;
 
 namespace BlogNetworkB.Controllers
 {
@@ -49,7 +49,7 @@ namespace BlogNetworkB.Controllers
 
             for(int i = 0; i < comments.Length; i++)
             {
-                cvm[i].AuthorName = author.Login;
+                cvm[i].AuthorName = author.Email;
                 cvm[i].ArticleName = _articleRepository.GetArticleById(comments[i].ArticleId).Result.Title;
             }
 
@@ -71,7 +71,7 @@ namespace BlogNetworkB.Controllers
             {
                 var author = _authorRepository.GetAuthorById(view.AuthorId).Result;
                 var article = _articleRepository.GetArticleById(view.ArticleId).Result;
-                view.AuthorName = author.Login;
+                view.AuthorName = author.Email;
                 view.ArticleName = article.Title;
             }
 
@@ -134,6 +134,18 @@ namespace BlogNetworkB.Controllers
                 return RedirectToAction("CommentsList");
             }
             return View("EditComment", ucvm.CommentId);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/DeleteComment")]
+        public async Task<IActionResult> DeleteComment(int id)
+        {
+            var comment = await _commentRepository.GetCommentById(id);
+
+            await _commentRepository.DeleteComment(comment);
+
+            return RedirectToAction("CommentList");
         }
     }
 }

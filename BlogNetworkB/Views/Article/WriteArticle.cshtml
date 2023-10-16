@@ -4,6 +4,7 @@
 
 @model BlogNetworkB.Models.Article.ArticleViewModel
 
+
 <div class="articl-blck page-blck light-shadow">
     <form class="lgn-form pdng-rem06" method="post" asp-controller="Article" asp-action="PublicArticle">
         <div asp-validation-summary="ModelOnly" />
@@ -15,9 +16,9 @@
         </div>
 
         <div>
-            @foreach(var key in Model.ArticleTags.Keys)
+            @foreach(var key in Model.ArticleTags)
             {
-                <input type="checkbox" /> <label>@key</label>
+                <input type="checkbox" value="@key" name="tags" /><label>@key</label><br />
             }
         </div>
 

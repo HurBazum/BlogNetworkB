@@ -211,3 +211,19 @@
 .width-20 > button{
     width:100%;
 }
+
+.tag-span {
+    background-color: magenta;
+    padding: 0 0.3em;
+    border: 1px solid magenta;
+    border-radius: 2vh;
+    margin: 0.15em;
+}
+
+/* для таблиц */
+.t-center-txt{
+}
+
+.t-center-txt > *{
+    text-align:center;
+}

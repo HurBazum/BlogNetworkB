@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
-using BlogNetworkB.DAL.Repositories.Interfaces;
-using BlogNetworkB.DAL.Enteties;
+using ConnectionLib.DAL.Repositories.Interfaces;
+using ConnectionLib.DAL.Enteties;
 using BlogNetworkB.Models.Tag;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using BlogNetworkB.BLL.Models.Tag;
+using ConnectionLib.DAL.Queries.Tag;
 
 namespace BlogNetworkB.Controllers
 {
@@ -49,8 +51,8 @@ namespace BlogNetworkB.Controllers
             return View("CreateTag", tagViewModel);
         }
 
-        [Route("/[controller]/All")]
         [HttpGet]
+        [Route("/[controller]/All")]
         public async Task<IActionResult> TagList()
         {
             var tags = await _tagRepository.GetAll();
@@ -58,6 +60,57 @@ namespace BlogNetworkB.Controllers
             var tagArray = _mapper.Map<TagViewModel[]>(tags);
 
             return View(new TagListViewModel { Tags = tagArray });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/DeleteTag")]
+        public async Task<IActionResult> DeleteTag(int id)
+        {
+            var tag = await _tagRepository.GetTagById(id);
+
+            try
+            {
+                await _tagRepository.DeleteTag(tag);
+            }
+            catch
+            {
+                return View("/Views/Alert/SomethingWrong.cshtml");
+            }
+
+            return RedirectToAction("TagList");
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("/[controller]/ChangeTag")]
+        public async Task<IActionResult> RewriteTag(int id)
+        {
+            var tag = await _tagRepository.GetTagById(id);
+
+            UpdateTagRequestViewModel utrvm = new() { TagId = tag.Id, NewContent = tag.Content };
+
+            return View(utrvm);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("/[controller]/ChangeTag")]
+        public async Task<IActionResult> ConfirmRewriteTag([FromForm]UpdateTagRequestViewModel utrvm)
+        {
+            if (ModelState.IsValid)
+            {
+                var tag = await _tagRepository.GetTagById(utrvm.TagId);
+
+                var request = _mapper.Map<UpdateTagRequest>(utrvm);
+
+                await _tagRepository.UpdateTag(tag, _mapper.Map<UpdateTagQuery>(request));
+
+                return RedirectToAction("TagList");
+            }
+
+            int id = utrvm.TagId;
+            return RedirectToAction("RewriteTag", id);
         }
     }
 }

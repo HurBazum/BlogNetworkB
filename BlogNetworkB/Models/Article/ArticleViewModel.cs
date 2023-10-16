@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace BlogNetworkB.Models.Article
 {
@@ -6,7 +7,9 @@ namespace BlogNetworkB.Models.Article
     {
         public int ArticleId { get; set; }
         public int CreatorId { get; set; }
-               
+        
+        // для удаления/редактирования статей
+        public string AuthorEmail { get; set; }
 
         [Required]
         [MinLength(5, ErrorMessage = "Минимальная длина заголовка - 5 символов")]
@@ -23,6 +26,6 @@ namespace BlogNetworkB.Models.Article
         public string Description => (Content.Length > 200) ? string.Concat(Content[..199], "...") : Content;
         public DateTime CreatedDate { get; set; }
 
-        public Dictionary<string, bool> ArticleTags { get; set; } = new();
+        public ICollection<string>? ArticleTags { get; set; }
     }
 }

@@ -1,10 +1,10 @@
 using AutoMapper;
 using BlogNetworkB.Infrastructure.Mapping;
 using ConnectionLib;
-using BlogNetworkB.DAL;
+using ConnectionLib.DAL;
 using Microsoft.EntityFrameworkCore;
-using BlogNetworkB.DAL.Repositories.Interfaces;
-using BlogNetworkB.DAL.Repositories;
+using ConnectionLib.DAL.Repositories.Interfaces;
+using ConnectionLib.DAL.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 

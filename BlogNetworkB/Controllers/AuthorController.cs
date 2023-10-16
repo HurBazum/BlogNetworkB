@@ -1,16 +1,15 @@
 ﻿using AutoMapper;
-using BlogNetworkB.DAL.Repositories.Interfaces;
+using ConnectionLib.DAL.Repositories.Interfaces;
 using BlogNetworkB.Models.Account;
 using Microsoft.AspNetCore.Mvc;
-using BlogNetworkB.DAL.Enteties;
-using BlogNetworkB.DAL.Repositories;
+using ConnectionLib.DAL.Enteties;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.Infrastructure.Extensions;
 using BlogNetworkB.BLL.Models.Author;
-using BlogNetworkB.DAL.Queries.Author;
+using ConnectionLib.DAL.Queries.Author;
 
 namespace BlogNetworkB.Controllers
 {

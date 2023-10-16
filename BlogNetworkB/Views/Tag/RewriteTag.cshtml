@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "RewriteTag";
+}
+
+@model BlogNetworkB.Models.Tag.UpdateTagRequestViewModel
+
+<div class="main-blck page-blck light-shadow p-2 m-1 flex-d-column">
+    <form class="pdng-rem06" method="post" asp-controller="Tag" asp-action="ConfirmRewriteTag">
+        <div asp-validation-summary="ModelOnly" />
+        <input class="id-input" asp-for="TagId" value="@Model.TagId" />
+        <div class="lgn-form mrg-one-bttm">
+            <input class="" asp-for="NewContent" value="@Model.NewContent" placeholder="Напишите тег. . ." />
+        </div>
+        <div class="btn-grid-blck mrg-one-bttm">
+            <button class="btn-success frm-btn-one" type="submit">Изменить</button>
+        </div>
+    </form>
+</div>

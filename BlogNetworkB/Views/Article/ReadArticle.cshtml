@@ -10,7 +10,7 @@
             <h5>@Model.Title</h5>
             <p>@Model.CreatedDate</p>
         </div>
-
+        <input class="id-input" asp-for="AuthorEmail" />
         <div class="article-div pdng-norm" style="padding-top:0;">
             @Model.Content
         </div>
@@ -20,7 +20,7 @@
                 <input class="id-input" name="id" value="@Model.ArticleId"/>
                 <button class="btn-success" type="submit">Комментировать</button>
             </form>
-            @if(User.IsInRole("Moderator"))
+            @if(User.IsInRole("Moderator") || User.Claims.FirstOrDefault().Value == @Model.AuthorEmail)
             {
                 <form class="width-20" method="get" asp-controller="Article" asp-action="RewriteArticle">
                     <input class="id-input" name="id" value="@Model.ArticleId" />

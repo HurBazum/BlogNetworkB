@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using BlogNetworkB.DAL.Repositories.Interfaces;
-using BlogNetworkB.DAL.Enteties;
+using ConnectionLib.DAL.Repositories.Interfaces;
+using ConnectionLib.DAL.Enteties;
 using BlogNetworkB.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;

@@ -1,13 +1,14 @@
 ﻿using AutoMapper;
-using BlogNetworkB.DAL.Repositories.Interfaces;
-using BlogNetworkB.DAL.Enteties;
-using BlogNetworkB.DAL.Queries.Article;
+using ConnectionLib.DAL.Repositories.Interfaces;
+using ConnectionLib.DAL.Enteties;
+using ConnectionLib.DAL.Queries.Article;
 using BlogNetworkB.BLL.Models.Article;
 using BlogNetworkB.Models.Article;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BlogNetworkB.Models.Account;
 using BlogNetworkB.Models.Tag;
+using System.Collections.ObjectModel;
 
 namespace BlogNetworkB.Controllers
 {
@@ -35,14 +36,14 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpGet]
         [Route("/[controller]/NewArticle")]
-        public async Task<IActionResult> WriteArticle()
+        public IActionResult WriteArticle()
         {
-            var avm = new ArticleViewModel();
+            var avm = new ArticleViewModel() { ArticleTags = new List<string>() };
             var tags = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
             
             foreach (var tag in tags)
             {
-                avm.ArticleTags.Add(tag, false);
+                avm.ArticleTags.Add(tag);
             }
 
             return View(avm);
@@ -51,7 +52,7 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpPost]
         [Route("/[controller]/NewArticle")]
-        public async Task<IActionResult> PublicArticle([FromForm] ArticleViewModel articleViewModel)
+        public async Task<IActionResult> PublicArticle([FromForm] ArticleViewModel articleViewModel, params string[] tags)
         {
             if(ModelState.IsValid)
             {
@@ -65,10 +66,11 @@ namespace BlogNetworkB.Controllers
 
                 article.CreatedDate = DateTime.Now;
 
-                //foreach(var tag in articleViewModel.ArticleTags)
-                //{
-                //    article.Tags.Add(_mapper.Map<Tag>(tag));
-                //}
+                foreach(var key in tags)
+                {
+                    var tag = await _tagRepository.GetTagByContent(key);
+                    article.Tags.Add(tag);
+                }
 
                 await _articleRepository.AddArticle(article);
 
@@ -103,6 +105,11 @@ namespace BlogNetworkB.Controllers
             
             var avmArray = _mapper.Map<ArticleViewModel[]>(articles);
 
+            foreach (var article in avmArray)
+            {
+                article.AuthorEmail = author.Email;
+            }
+
             return View(new ArticleListViewModel { Articles = avmArray });
         }
 
@@ -115,6 +122,11 @@ namespace BlogNetworkB.Controllers
 
             var avmArray = _mapper.Map<ArticleViewModel[]>(articles);
 
+            for(int i = 0; i < articles.Length; i++)
+            {
+                avmArray[i].ArticleTags = _articleRepository.GetArticlesTags(articles[i]).Result.Select(t => t.Content).ToList();
+            }
+
             return View("MyArticlesList", new ArticleListViewModel { Articles = avmArray });
         }
 
@@ -125,7 +137,11 @@ namespace BlogNetworkB.Controllers
         {
             var article = await _articleRepository.GetArticleById(id);
 
+            var author = await _authorRepository.GetAuthorById(article.AuthorId);
+
             var avm = _mapper.Map<ArticleViewModel>(article);
+
+            avm.AuthorEmail = author.Email;
 
             return View(avm);
         }
@@ -152,7 +168,7 @@ namespace BlogNetworkB.Controllers
                 var article = await _articleRepository.GetArticleById(model.ArticleId);
                 
                 // для редиректа
-                var currentAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                //var currentAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
                 var uar = _mapper.Map<UpdateArticleRequest>(model);
 
