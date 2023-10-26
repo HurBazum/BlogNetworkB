@@ -1,0 +1,44 @@
+﻿@{
+    ViewData["Title"] = "ArticleComments";
+}
+
+@model BlogNetworkB.Models.Comment.CommentListViewModel
+
+@foreach (var cvm in Model.Comments)
+{
+    <div class="pdng-norm b-border">
+        <div class="r-t-login caption-common">
+            <h5>@cvm.AuthorName об @cvm.ArticleName</h5>
+            <label>@cvm.CreatedDate</label>
+        </div>
+        <div class="start-flex-blck r-t-login flex-d-column">
+
+            <div class="comment-area">
+                @cvm.Content
+            </div>
+
+            <div class="btn-flex-blck">
+
+                @if (User.Claims.FirstOrDefault().Value != cvm.AuthorName)
+                {
+                    <form class="width-20" method="get" asp-controller="Author" asp-action="AuthorPage">
+                        <input class="id-input" name="id" value="@cvm.AuthorId" />
+                        <button class="btn-success" type="submit">К автору</button>
+                    </form>
+                }
+                @if (User.IsInRole("Moderator") || User.Claims.FirstOrDefault().Value == cvm.AuthorName)
+                {
+                    <form class="width-20" method="get" asp-controller="Comment" asp-action="EditComment">
+                        <input class="id-input" name="id" value="@cvm.CommentId" />
+                        <button class="btn-warning" type="submit">Изменить</button>
+                    </form>
+                    <form class="width-20" method="post" asp-controller="Comment" asp-action="DeleteComment">
+                        <input class="id-input" name="id" value="@cvm.CommentId" />
+                        <button class="btn-danger" type="submit">Удалить</button>
+                    </form>
+                }
+
+            </div>
+        </div>
+    </div>
+}

@@ -16,7 +16,7 @@ namespace BlogNetworkB.Models.Comment
 
         public CreateCommentViewModel()
         {
-            CreatedDate = DateTime.Now;
+            CreatedDate = DateTime.UtcNow;
         }
     }
 }

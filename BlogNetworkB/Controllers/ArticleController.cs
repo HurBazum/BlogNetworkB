@@ -7,9 +7,14 @@ using BlogNetworkB.Models.Article;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BlogNetworkB.Models.Account;
+using BlogNetworkB.Models.Comment;
+using Microsoft.AspNetCore.Mvc.Filters;
+using BlogNetworkB.Infrastructure.Exceptions;
+using BlogNetworkB.Models.CustomError;
 
 namespace BlogNetworkB.Controllers
 {
+    [ExceptionHandler]
     [Route("/Article")]
     public class ArticleController : Controller
     {
@@ -18,13 +23,15 @@ namespace BlogNetworkB.Controllers
         readonly ITagRepository _tagRepository;
         readonly ICommentRepository _commentRepository;
         readonly IMapper _mapper;
-        public ArticleController(IArticleRepository articleRepository, IAuthorRepository authorRepository, ICommentRepository commentRepository, ITagRepository tagRepository, IMapper mapper)
+        readonly ILogger<ArticleController> _logger;
+        public ArticleController(IArticleRepository articleRepository, IAuthorRepository authorRepository, ICommentRepository commentRepository, ITagRepository tagRepository, IMapper mapper, ILogger<ArticleController> logger)
         {
             _articleRepository = articleRepository;
             _authorRepository = authorRepository;
             _commentRepository = commentRepository;
             _tagRepository = tagRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public IActionResult Index()
@@ -35,18 +42,40 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpGet]
         [Route("/[controller]/NewArticle")]
-        public IActionResult WriteArticle()
+        public IActionResult WriteArticle(ArticleViewModel? avm)
         {
-            var avm = new ArticleViewModel { ArticleTags = new List<string>() };
-
-            var tags = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
-            
-            foreach (var tag in tags)
+            try
             {
-                avm.ArticleTags.Add(tag);
-            }
+                if (avm == null)
+                {
+                    avm = new ArticleViewModel();
+                }
 
-            return View(avm);
+                var tags = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
+
+                if (!tags.Any())
+                {
+                    throw new CustomException("Попытка добавить статью. Нет доступных тегов. Сначала добавьте хотя бы один тег на странице с \'Теги\'");
+                }
+
+                foreach (var tag in tags)
+                {
+                    if (!avm.ArticleTags.Contains(tag))
+                    {
+                        avm.ArticleTags.Add(tag);
+                    }
+                }
+
+                _logger.LogInformation("Пользователь {email} приступил к созданию статьи", HttpContext.User.Claims.FirstOrDefault().Value);
+
+                return View(avm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+            }
         }
 
 
@@ -68,7 +97,20 @@ namespace BlogNetworkB.Controllers
 
                 article.Author = author;
 
-                article.CreatedDate = DateTime.Now;
+                article.CreatedDate = DateTime.UtcNow;
+
+                if(tags.Length == 0)
+                {
+                    ModelState.AddModelError("ArticleTags", "Необходимо указать хотя бы один тег");
+
+                    _logger.LogWarning("Не были указаны теги");
+
+                    tags = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToArray();
+
+                    articleViewModel.ArticleTags = tags;
+
+                    return View("WriteArticle", articleViewModel);
+                }
 
                 foreach(var t in tags)
                 {
@@ -79,9 +121,13 @@ namespace BlogNetworkB.Controllers
                 try
                 {
                     await _articleRepository.AddArticle(article);
+
+                    _logger.LogInformation("Статья '{article}' была создана пользователем {email}", article.Title, author.Email);
                 }
-                catch
+                catch(Exception ex)
                 {
+                    _logger.LogError("Пользователь {email} не смог добавить статью", author.Email);
+                    CustomErrorViewModel cevm = new() { Message = string.Concat(ex.Message, "\n", $"Пользователь {author.Email} не смог добавить статью") };
                     return View("/Views/Alert/SomethingWrong.cshtml");
                 }
 
@@ -92,13 +138,16 @@ namespace BlogNetworkB.Controllers
                 return View("/Views/Author/MyPage.cshtml", model);
             }
 
-            // чтоб было возможно выбрать из всех тегов, а не только
-            // тех, что были переданны в этот метод
+            _logger.LogWarning("Неверно заполнена форма");
+
+            //// чтоб было возможно выбрать из всех тегов, а не только
+            //// тех, что были переданны в этот метод
             var tagsName = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
 
+            //articleViewModel.ArticleTags = tagsName;
             foreach (var tag in tagsName)
             {
-                articleViewModel.ArticleTags!.Add(tag);
+                articleViewModel.ArticleTags.Add(tag);
             }
 
             return View("WriteArticle", articleViewModel);
@@ -115,10 +164,14 @@ namespace BlogNetworkB.Controllers
             if (id == null)
             {
                 author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+
+                _logger.LogInformation("Пользователь {email} перешёл к списку своих статей", author.Email);
             }
             if(id != null)
             {
                 author = await _authorRepository.GetAuthorById((int)id);
+
+                _logger.LogInformation("Пользователь {currEmail} перешёл к списку статей автора {email}", HttpContext.User.Claims.FirstOrDefault().Value, author.Email);
             }
 
             var articles = await _articleRepository.GetArticlesByAuthor(author);
@@ -152,6 +205,8 @@ namespace BlogNetworkB.Controllers
                 avmArray[i].ArticleTags = _articleRepository.GetArticlesTags(articles[i]).Result.Select(t => t.Content).ToList();
             }
 
+            _logger.LogInformation("Пользователь {email} перешёл к списку всех статей", HttpContext.User.Claims.FirstOrDefault().Value);
+
             return View("MyArticlesList", new ArticleListViewModel { Articles = avmArray });
         }
 
@@ -166,7 +221,19 @@ namespace BlogNetworkB.Controllers
 
             var avm = _mapper.Map<ArticleViewModel>(article);
 
+            var comments = await _commentRepository.GetCommentByArticle(article);
+
+            foreach(var comment in comments.ToList())
+            {
+                var cvm = _mapper.Map<CommentViewModel>(comment);
+                cvm.AuthorName = _authorRepository.GetAuthorById(comment.AuthorId).Result.Email;
+                cvm.ArticleName = article.Title;
+                avm.ArticleComments.Comments.Add(cvm);
+            }
+
             avm.AuthorEmail = author.Email;
+
+            _logger.LogInformation("Пользователь {email} прочитал статью {article}", HttpContext.User.Claims.FirstOrDefault().Value, avm.Title);
 
             return View(avm);
         }
@@ -199,8 +266,12 @@ namespace BlogNetworkB.Controllers
 
                 await _articleRepository.UpdateArticle(article, _mapper.Map<UpdateArticleQuery>(uar));
 
+                _logger.LogInformation("Пользователь {email} изменил {articleId} статью", HttpContext.User.Claims.FirstOrDefault().Value, article.Id);
+
                 return RedirectToAction("ArticleList");
             }
+
+            _logger.LogWarning("Неверно заполнена форма");
 
             return View("RewriteArticle", model.ArticleId);
         }
@@ -213,6 +284,8 @@ namespace BlogNetworkB.Controllers
             var article = await _articleRepository.GetArticleById(id);
 
             await _articleRepository.DeleteArticle(article);
+
+            _logger.LogInformation("Пользователем {email} была удалена статья {article}", HttpContext.User.Claims.FirstOrDefault().Value, article.Id);
 
             return RedirectToAction("ArticleList");
         }

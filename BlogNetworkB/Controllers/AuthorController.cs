@@ -10,9 +10,12 @@ using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.Infrastructure.Extensions;
 using BlogNetworkB.BLL.Models.Author;
 using ConnectionLib.DAL.Queries.Author;
+using BlogNetworkB.Infrastructure.Exceptions;
+using BlogNetworkB.Models.CustomError;
 
 namespace BlogNetworkB.Controllers
 {
+    [ExceptionHandler]
     [Route("/Author")]
     public class AuthorController : Controller
     {
@@ -21,14 +24,16 @@ namespace BlogNetworkB.Controllers
         readonly IArticleRepository _articleRepository;
         readonly ICommentRepository _commentRepository;
         readonly IMapper _mapper;
+        readonly ILogger<AuthorController> _logger;
 
-        public AuthorController(IAuthorRepository authorRepository, IRoleRepository roleRepository, IArticleRepository articleRepository, ICommentRepository commentRepository, IMapper mapper)
+        public AuthorController(IAuthorRepository authorRepository, IRoleRepository roleRepository, IArticleRepository articleRepository, ICommentRepository commentRepository, IMapper mapper, ILogger<AuthorController> logger)
         {
             _authorRepository = authorRepository;
             _roleRepository = roleRepository;
             _articleRepository = articleRepository;
             _commentRepository = commentRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         [Route("/[controller]/Register")]
@@ -47,33 +52,42 @@ namespace BlogNetworkB.Controllers
             if(ModelState.IsValid)
             {
                 // емейл должен быть уникальным
-                bool authorExists = (_authorRepository.GetAuthorByEmail(registerViewModel.Email) == null);
+                var authorExists = await _authorRepository.GetAuthorByEmail(registerViewModel.Email);
 
-                if (!authorExists)
+                if(authorExists != null)
                 {
-                    registerViewModel.FirstName = registerViewModel.FirstName.UpFirstLowOther();
-                    registerViewModel.LastName = registerViewModel.LastName.UpFirstLowOther();
+                    ModelState.AddModelError("Email", "Пользователь с таким email уже зарегистрирован");
 
-                    var author = _mapper.Map<Author>(registerViewModel);
+                    _logger.LogError("Попытка зарегестрировать ещё одну страницу на {email}", registerViewModel.Email);
 
-                    author.Roles.Add(_roleRepository.GetAll().Result[0]);
-
-                    int countAuthors = _authorRepository.GetAll().Result.Length;
-
-                    // создаём первого администратора
-                    // он может добавлять роли остальным пользователям
-                    if (countAuthors == 0)
-                    {
-                        author.Roles.Add(_roleRepository.GetRoleById(3).Result);
-                    }
-
-                    await _authorRepository.AddAuthor(author);
-
-                    return RedirectToAction("Index", "Home");
+                    return View("Register");
                 }
 
-                return View("Register", registerViewModel);
+                registerViewModel.FirstName = registerViewModel.FirstName.UpFirstLowOther();
+                registerViewModel.LastName = registerViewModel.LastName.UpFirstLowOther();
+
+                var author = _mapper.Map<Author>(registerViewModel);
+
+                author.Roles.Add(_roleRepository.GetAll().Result[0]);
+
+                int countAuthors = _authorRepository.GetAll().Result.Length;
+
+                // создаём первого администратора
+                // он может добавлять роли остальным пользователям
+                if (countAuthors == 0)
+                {                    
+                    author.Roles.Add(_roleRepository.GetRoleById(3).Result);
+                }
+
+                await _authorRepository.AddAuthor(author);
+
+                _logger.LogInformation("Добавлен пользователь {email}: {roles}", registerViewModel.Email, author.Roles.ConvertToString());
+
+                return RedirectToAction("Index", "Home");
             }
+
+            _logger.LogWarning("Неверно заполнена форма");
+
             return View("Register", registerViewModel);
         }
 
@@ -89,6 +103,19 @@ namespace BlogNetworkB.Controllers
             {
                 var author = await _authorRepository.GetAuthorByEmail(loginViewModel.Email);
 
+                if(author == null)
+                {
+                    ModelState.AddModelError("Email", "неверный email");
+                    _logger.LogWarning("Некорректный email");
+                    return View("Login");
+                }
+
+                if(author!.Password != loginViewModel.Password)
+                {
+                    ModelState.AddModelError("Password", "неверный пароль");
+                    _logger.LogWarning("Неверный пароль - {email}", loginViewModel.Email);
+                    return View("Login");
+                }
 
                 var claims = new List<Claim>
                 {
@@ -111,8 +138,12 @@ namespace BlogNetworkB.Controllers
                 avm.ArticlesCount = _articleRepository.GetArticlesByAuthor(author).Result.Length;
                 avm.CommentsCount = _commentRepository.GetCommentByAuthor(author).Result.Length;
 
+                _logger.LogInformation("Пользователь {email} авторизовался", author.Email);
+                
                 return View("MyPage", avm);
             }
+
+            _logger.LogWarning("Неверно заполнена форма");
 
             return View("Login", loginViewModel);
         }
@@ -123,14 +154,31 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/Blog")]
         public IActionResult AuthorPage(int? id)
         {
-            var a = _authorRepository.GetAuthorById((int)id).Result;
+            try
+            {
+                if(id == null || int.TryParse(id.ToString(), out int isInt) == false)
+                {
+                    throw new CustomException($"Некорректно задан id: \'{id}\'");
+                }
 
-            var avm = _mapper.Map<AuthorViewModel>(a);
+                // выражение объединения
+                var a = _authorRepository.GetAuthorById(isInt).Result ?? throw new CustomException($"Пользователя с id={id} не существует");
+                
+                var avm = _mapper.Map<AuthorViewModel>(a);
 
-            avm.ArticlesCount = _articleRepository.GetArticlesByAuthor(a).Result.Length;
-            avm.CommentsCount = _commentRepository.GetCommentByAuthor(a).Result.Length;
+                avm.ArticlesCount = _articleRepository.GetArticlesByAuthor(a).Result.Length;
+                avm.CommentsCount = _commentRepository.GetCommentByAuthor(a).Result.Length;
 
-            return View("MyPage", avm);
+                _logger.LogInformation("Пользователь {guest} перешёл на страницу пользователя {author}", HttpContext.User.Claims.FirstOrDefault().Value, avm.Email);
+
+                return View("MyPage", avm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+            }
         }
 
         // in progress. . .
@@ -160,7 +208,12 @@ namespace BlogNetworkB.Controllers
         [HttpGet]
         public async Task<IActionResult> Logout()
         {
+            string email = HttpContext.User.Claims.FirstOrDefault().Value;
+
             await HttpContext.SignOutAsync("Cookies");
+
+            _logger.LogInformation("Пользователь {email} вышел из сети", email);
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -180,6 +233,8 @@ namespace BlogNetworkB.Controllers
                 authorsArray[i].Roles = _authorRepository.GetAuthorsRoles(authors[i]).Result.Select(r => r.Name).ToList();
             }
 
+            _logger.LogInformation("{email} перешёл к списку всех пользователей\n", HttpContext.User.Claims.FirstOrDefault().Value);
+
             return View(new AuthorListViewModel { Authors = authorsArray });
         }
 
@@ -188,17 +243,30 @@ namespace BlogNetworkB.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
-            var author = await _authorRepository.GetAuthorById(id);
-
-            if (author.Email == HttpContext.User.Claims.FirstOrDefault().Value)
+            try
             {
-                return View("/Views/Alert/SomethingWrong.cshtml");
+                var author = await _authorRepository.GetAuthorById(id);
+
+                var currAuthor = HttpContext.User.Claims.FirstOrDefault().Value;
+
+                if (author.Email == currAuthor)
+                {
+                    throw new CustomException($"Пользователь {author.Email} пытался удалить сам себя. Невозможное действие.");
+                }
+                else
+                {
+                    await _authorRepository.DeleteAuthor(author);
+
+                    _logger.LogInformation("Пользователь {email} удалил пользователя {author}", currAuthor, author.Email);
+
+                    return RedirectToAction("AuthorsList");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await _authorRepository.DeleteAuthor(author);
-
-                return RedirectToAction("AuthorsList");
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
             }
         }
 
@@ -234,8 +302,12 @@ namespace BlogNetworkB.Controllers
 
                     await _authorRepository.UpdateAuthor(authAuthor, _mapper.Map<UpdateAuthorQuery>(updateMeRequest));
 
+                    _logger.LogInformation("Пользователь {id} сменил данные о себе", authAuthor.Id);
+
                     if(updateMeRequest.NewEmail != null)
                     {
+                        _logger.LogInformation("Пользователь {id} сменил email", authAuthor.Id);
+
                         return RedirectToAction("Logout");
                     }
 
@@ -249,13 +321,19 @@ namespace BlogNetworkB.Controllers
 
                 if (uar.NewEmail != null && authAuthor.Id == uarvm.AuthorId)
                 {
+                    _logger.LogInformation("Пользователь {id} сменил email", authAuthor.Id);
+
                     return RedirectToAction("Logout");
                 }
+
+                _logger.LogInformation("Пользователь {email} сменил данные пользователю {id}", authAuthor.Email, author.Id);
 
                 return RedirectToAction("AuthorsList");
             }
 
             int? authorId = uarvm.AuthorId;
+
+            _logger.LogWarning("Неверно заполнены данные для редактирования анкеты");
 
             return View("EditAuthor", authorId);
         }

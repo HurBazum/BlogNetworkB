@@ -10,6 +10,7 @@
         <input class="id-input" asp-for="TagId" value="@Model.TagId" />
         <div class="lgn-form mrg-one-bttm">
             <input class="" asp-for="NewContent" value="@Model.NewContent" placeholder="Напишите тег. . ." />
+            <span asp-validation-for="NewContent"></span>
         </div>
         <div class="btn-grid-blck mrg-one-bttm">
             <button class="btn-success frm-btn-one" type="submit">Изменить</button>

@@ -8,7 +8,7 @@
     <h3>Добавление комментария</h3>
     <form method="post" asp-controller="Comment" asp-action="ConfirmWriteComment">
         <div asp-validation-summary="ModelOnly"/>
-        <input asp-for="@Model.ArticleId" value="@Model.ArticleId" />
+        <input class="id-input" asp-for="@Model.ArticleId" value="@Model.ArticleId" />
         <div class="lgn-form">
             <label asp-for="Content"></label>
             <textarea asp-for="Content"></textarea>

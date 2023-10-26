@@ -3,14 +3,20 @@
 }
 @model BlogNetworkB.Models.Account.LoginViewModel
 
-<div class="main-blck flex-d-column light-shadow">
+<div class="main-blck light-shadow p-2 m-1 flex-d-column">
     <form class="lgn-form" method="post" asp-controller="Author" asp-action="ConfirmLogin">
         <div asp-validation-summary="ModelOnly" />
         <div class="fields-container">
-            <label class="main-lbl">Email:</label><input asp-for="Email" />
+            <label style="text-align:end;padding-right:1em;" asp-for="Email"></label>
+            <input asp-for="Email" />
+            <span asp-validation-for="Email"></span>
+
         </div>
         <div class="fields-container">
-            <label class="main-lbl">Пароль:</label><input asp-for="Password" />
+            <label style="text-align:end;padding-right:1em;" asp-for="Password"></label>
+            <input asp-for="Password" />
+            <span asp-validation-for="Password"></span>
+
         </div>
         <div class="btn-grid-blck">
             <button class="btn-success frm-btn-one" type="submit">Войти</button>

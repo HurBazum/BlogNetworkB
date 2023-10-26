@@ -9,18 +9,24 @@
     <form class="lgn-form pdng-rem06" method="post" asp-controller="Article" asp-action="PublicArticle">
         <div asp-validation-summary="ModelOnly"/>
         <div class="">
+            <label asp-for="Title"></label>
             <input class="no-brdr caption-field pdng-norm mrg-one-bttm" asp-for="Title" placeholder="Заголовок" />
+            <span asp-validation-for="Title"></span>
         </div>
         <div class="article-div">
+            <label asp-for="Content"></label>
             <textarea class="article pdng-norm mrg-one-bttm no-brdr" asp-for="Content" placeholder="Напишите статью. . ."></textarea>
+            <span asp-validation-for="Content"></span>
         </div>
 
+        <label asp-for="ArticleTags"></label>
         <div>
-            @foreach(var key in Model.ArticleTags!)
+            @foreach(var key in Model.ArticleTags)
             {
                 <input type="checkbox" value="@key" name="tags" /><label>@key</label><br />
             }
         </div>
+        <span asp-validation-for="ArticleTags"></span>
 
         <div class="btn-flex-blck">
             <button class="btn-success frm-btn-two" type="submit">Публикация</button>

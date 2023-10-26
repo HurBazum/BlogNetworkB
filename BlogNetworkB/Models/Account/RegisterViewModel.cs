@@ -18,6 +18,7 @@ namespace BlogNetworkB.Models.Account
         public string Email { get; set; } = null!;
 
         [Required]
+        [Display(Name = "Логин")]
         public string Login { get; set; } = null!;
 
         [Required]

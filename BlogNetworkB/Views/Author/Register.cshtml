@@ -6,27 +6,39 @@
     <form class="lgn-form" method="post" asp-controller="Author" asp-action="ConfirmRegister" >
         <div asp-validation-summary="ModelOnly" />
         <div class="fields-container">
-            <label class="main-lbl text-end">Имя:</label><input asp-for="FirstName" />
+
+            <label class="main-lbl text-end">Имя:</label>
+            <input asp-for="FirstName" />
+            <span asp-validation-for="FirstName"></span>
         </div>
 
         <div class ="fields-container">
-            <label class="main-lbl">Фамилия:</label><input asp-for="LastName" />
+            <label class="main-lbl">Фамилия:</label>
+            <input asp-for="LastName" />
+            <span asp-validation-for="LastName"></span>
         </div>
 
         <div class="fields-container">
-            <label class="main-lbl">Логин:</label><input asp-for="Login" />
+            <label class="main-lbl">Логин:</label>
+            <input asp-for="Login" />
+            <span asp-validation-for="Login"></span>
         </div>
 
         <div class="fields-container">
             <label class="main-lbl">Email:</label><input asp-for="Email" />
+            <span asp-validation-for="Email"></span>
         </div>
 
         <div class="fields-container">
-            <label class="main-lbl">Пароль:</label><input asp-for="Password" />
+            <label class="main-lbl">Пароль:</label>
+            <input asp-for="Password" />
+            <span asp-validation-for="Password"></span>
         </div>
 
         <div class="fields-container">
-            <label class="main-lbl">Подтверждение пароля:</label><input asp-for="ConfirmPassword" />
+            <label class="main-lbl" style="text-size-adjust:inherit;">Подтверждение пароля:</label>
+            <input asp-for="ConfirmPassword" />
+            <span asp-validation-for="ConfirmPassword"></span>
         </div>
         
         <button class="btn-success btn-cntr" type="submit">Регистрация</button>

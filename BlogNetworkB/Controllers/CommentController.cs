@@ -17,13 +17,15 @@ namespace BlogNetworkB.Controllers
         readonly IArticleRepository _articleRepository;
         readonly IAuthorRepository _authorRepository;
         readonly IMapper _mapper;
+        readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentRepository commentRepository, IArticleRepository articleRepository, IAuthorRepository authorRepository, IMapper mapper)
+        public CommentController(ICommentRepository commentRepository, IArticleRepository articleRepository, IAuthorRepository authorRepository, IMapper mapper, ILogger<CommentController> logger)
         {
             _commentRepository = commentRepository;
             _articleRepository = articleRepository;
             _authorRepository = authorRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         [Authorize]
@@ -36,10 +38,14 @@ namespace BlogNetworkB.Controllers
             if(id == null)
             {
                 author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+
+                _logger.LogInformation("Пользователь {email} обратился к своим комментариям", author.Email);
             }
             if(id != null)
             {
                 author = await _authorRepository.GetAuthorById((int)id);
+
+                _logger.LogInformation("Пользователь {currAuthor} обратился к комментариям пользователя {email}", HttpContext.User.Claims.FirstOrDefault().Value, author.Email);
             }
 
             var comments = await _commentRepository.GetCommentByAuthor(author);
@@ -75,6 +81,8 @@ namespace BlogNetworkB.Controllers
                 view.ArticleName = article.Title;
             }
 
+            _logger.LogInformation("Пользователь {email} обратился ко списку всех комментириев", HttpContext.User.Claims.FirstOrDefault().Value);
+
             return View(new CommentListViewModel { Comments = cvm });
         }
 
@@ -100,9 +108,12 @@ namespace BlogNetworkB.Controllers
 
                 await _commentRepository.AddComment(comment);
 
+                _logger.LogInformation("Пользователь {email} оставил комментарий к статье {article}", author.Email, article.Id);
 
                 return RedirectToAction("Index", "Home");
             }
+
+            _logger.LogWarning("Неверно заполнена форма");
 
             return View("WriteComment", ccvm);
         }
@@ -131,8 +142,13 @@ namespace BlogNetworkB.Controllers
 
                 await _commentRepository.UpdateComment(comment, _mapper.Map<UpdateCommentQuery>(ucr));
 
+                _logger.LogInformation("Пользователь {email} изменил коментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.Id);
+
                 return RedirectToAction("CommentsList");
             }
+
+            _logger.LogWarning("Неверно заполнена форма");
+
             return View("EditComment", ucvm.CommentId);
         }
 
@@ -144,6 +160,8 @@ namespace BlogNetworkB.Controllers
             var comment = await _commentRepository.GetCommentById(id);
 
             await _commentRepository.DeleteComment(comment);
+
+            _logger.LogInformation("Пользователь {email} удалил комментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.Id);
 
             return RedirectToAction("CommentList");
         }

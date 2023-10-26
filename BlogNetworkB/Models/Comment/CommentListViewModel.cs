@@ -2,6 +2,6 @@
 {
     public class CommentListViewModel
     {
-        public ICollection<CommentViewModel> Comments { get; set; }
+        public ICollection<CommentViewModel> Comments { get; set; } = new List<CommentViewModel>();
     }
 }

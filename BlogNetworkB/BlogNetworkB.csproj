@@ -7,6 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="nlog.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="nlog.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="nlog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="BLL\Services\" />
   </ItemGroup>
 
@@ -17,6 +31,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="NLog" Version="5.2.5" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.3.5" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,19 +6,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.BLL.Models.Tag;
 using ConnectionLib.DAL.Queries.Tag;
+using BlogNetworkB.Infrastructure.Exceptions;
+using BlogNetworkB.Models.CustomError;
 
 namespace BlogNetworkB.Controllers
 {
+    [ExceptionHandler]
     [Route("/Tags")]
     public class TagController : Controller
     {
         readonly ITagRepository _tagRepository;
         readonly IMapper _mapper;
+        readonly ILogger<TagController> _logger;
 
-        public TagController(ITagRepository tagRepository, IMapper mapper)
+        public TagController(ITagRepository tagRepository, IMapper mapper, ILogger<TagController> logger)
         {
             _tagRepository = tagRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
 
@@ -31,24 +36,35 @@ namespace BlogNetworkB.Controllers
         [HttpPost]
         public async Task<IActionResult> ConfirmCreateTag([FromForm] TagViewModel tagViewModel)
         {
-            if(ModelState.IsValid)
+            try
             {
-                // проверка на наличие тега с таким же контентом
-                var tag = (await _tagRepository.GetTagByContent(tagViewModel.Content) != null) ? null : _mapper.Map<Tag>(tagViewModel);
+                if (ModelState.IsValid)
+                {
+                    // проверка на наличие тега с таким же контентом
+                    var tag = (await _tagRepository.GetTagByContent(tagViewModel.Content) != null) ? null : _mapper.Map<Tag>(tagViewModel);
 
-                if(tag != null)
-                {
-                    await _tagRepository.AddTag(tag);
-                    return RedirectToAction("Index", "Home");
+                    if (tag != null)
+                    {
+                        await _tagRepository.AddTag(tag);
+
+                        _logger.LogInformation("Пользователь {email} добавил тег {tagContent}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Content);
+
+                        return RedirectToAction("TagList");
+                    }
+                    else
+                    {
+                        throw new CustomException($"Тег с контентом \'{tagViewModel.Content}\' уже существует");
+                    }
                 }
-                else
-                {
-                    // ?
-                    return View("Такой тег уже есть");
-                }
+
+                return View("CreateTag", tagViewModel);
             }
-
-            return View("CreateTag", tagViewModel);
+            catch(Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+            }
         }
 
         [HttpGet]
@@ -58,6 +74,8 @@ namespace BlogNetworkB.Controllers
             var tags = await _tagRepository.GetAll();
 
             var tagArray = _mapper.Map<TagViewModel[]>(tags);
+
+            _logger.LogInformation("Пользователь {email} обратился ко списку всех тегов", HttpContext.User.Claims.FirstOrDefault().Value);
 
             return View(new TagListViewModel { Tags = tagArray });
         }
@@ -72,10 +90,14 @@ namespace BlogNetworkB.Controllers
             try
             {
                 await _tagRepository.DeleteTag(tag);
+                _logger.LogInformation("Пользователь {email} удалил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Id);
+
             }
-            catch
+            catch(Exception ex)
             {
-                return View("/Views/Alert/SomethingWrong.cshtml");
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
             }
 
             return RedirectToAction("TagList");
@@ -106,10 +128,15 @@ namespace BlogNetworkB.Controllers
 
                 await _tagRepository.UpdateTag(tag, _mapper.Map<UpdateTagQuery>(request));
 
+                _logger.LogInformation("Пользователь {email} изменил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Id);
+
                 return RedirectToAction("TagList");
             }
 
             int id = utrvm.TagId;
+
+            _logger.LogWarning("Неверно заполнена форма");
+
             return RedirectToAction("RewriteTag", id);
         }
     }
