@@ -177,7 +177,14 @@ namespace BlogNetworkB.Controllers
             {
                 _logger.LogError("{error}", ex.Message);
                 CustomErrorViewModel cevm = new() { Message = ex.Message };
-                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                if (ex.Message.Contains("не существует"))
+                {
+                    return View("/Views/Alert/NotFound.cshtml", cevm);
+                }
+                else
+                {
+                    return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                }
             }
         }
 
@@ -273,7 +280,44 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpGet]
         [Route("/[controller]/Edit")]
-        public IActionResult EditAuthor(int? id) => View(new UpdateAuthorRequestViewModel { AuthorId = id});
+        public async Task<IActionResult> EditAuthor(int? id)
+        {
+            try
+            {
+                if(int.TryParse(id.ToString(), out int isInt) == false)
+                {
+                    throw new CustomException($"Некорректно задан id: {id}");
+                }
+
+                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+
+                if(!User.IsInRole("Moderator") && currAuthor.Id != isInt)
+                {
+                    throw new CustomException($"Недостаточно прав, {currAuthor.Email}");
+                }
+
+                var author = await _authorRepository.GetAuthorById(isInt) ?? throw new CustomException($"Пользователь с id={id} не существует");
+
+                return View(new UpdateAuthorRequestViewModel { AuthorId = id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() {  Message = ex.Message };
+                if(ex.Message.Contains("Недостаточно прав"))
+                {
+                    return View("/Views/Alert/AccessDenied.cshtml", cevm);
+                }
+                if(ex.Message.Contains("не существует"))
+                {
+                    return View("/Views/Alert/NotFound.cshtml", cevm);
+                }
+                else
+                {
+                    return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                }
+            }
+        }
 
         
         [Authorize]

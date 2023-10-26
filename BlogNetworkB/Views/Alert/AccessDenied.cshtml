@@ -2,6 +2,9 @@
     ViewData["Title"] = "AccessDenied";
 }
 
+@model BlogNetworkB.Models.CustomError.CustomErrorViewModel
+
 <div class="text-center">
     <h1 class="display-4">Доступ запрещён!</h1>
+    <h4>@Model.Message</h4>
 </div>

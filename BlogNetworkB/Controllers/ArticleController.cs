@@ -74,7 +74,7 @@ namespace BlogNetworkB.Controllers
             {
                 _logger.LogError("{error}", ex.Message);
                 CustomErrorViewModel cevm = new() { Message = ex.Message };
-                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                return View("/Views/Alert/NotFound.cshtml", cevm);
             }
         }
 
@@ -243,11 +243,28 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/RewriteArticle")]
         public async Task<IActionResult> RewriteArticle(int id)
         {
-            var article = await _articleRepository.GetArticleById(id);
+            // предотвращение доступа к изменению статьи без должной роли или без авторства
+            try
+            {
+                var currAuthor = await _authorRepository.GetAuthorByEmail(User.Claims.FirstOrDefault().Value);
 
-            UpdateArticleRequestViewModel uarvm = new() { ArticleId = article.Id, NewTitle = article.Title, NewContent = article.Content };
+                var article = await _articleRepository.GetArticleById(id);
 
-            return View(uarvm);
+                if (!User.IsInRole("Moderator") && currAuthor.Id != article.AuthorId)
+                {
+                    throw new CustomException($"Недостаточно прав для этого действия, {currAuthor.Email}");
+                }
+
+                UpdateArticleRequestViewModel uarvm = new() { ArticleId = article.Id, NewTitle = article.Title, NewContent = article.Content };
+
+                return View(uarvm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/AccessDenied.cshtml", cevm);
+            }
         }
 
         [Authorize]
@@ -273,7 +290,7 @@ namespace BlogNetworkB.Controllers
 
             _logger.LogWarning("Неверно заполнена форма");
 
-            return View("RewriteArticle", model.ArticleId);
+            return View("RewriteArticle", model);
         }
 
         [Authorize]

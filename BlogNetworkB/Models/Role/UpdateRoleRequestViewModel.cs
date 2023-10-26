@@ -10,7 +10,7 @@ namespace BlogNetworkB.Models.Role
         [Display(Name = "Новое имя")]
         public string RoleName { get; set; }
 
-        [Required]
+
         [Display(Name = "Новое описание")]
         [DataType(DataType.MultilineText)]
         [MinLength(10, ErrorMessage = "Слишком короткое описание роли!(Минимум 10 символов)")]

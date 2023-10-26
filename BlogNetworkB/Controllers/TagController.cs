@@ -108,11 +108,20 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/ChangeTag")]
         public async Task<IActionResult> RewriteTag(int id)
         {
-            var tag = await _tagRepository.GetTagById(id);
+            try
+            {
+                var tag = await _tagRepository.GetTagById(id) ?? throw new CustomException($"Непредвиденная ошибка");
 
-            UpdateTagRequestViewModel utrvm = new() { TagId = tag.Id, NewContent = tag.Content };
+                UpdateTagRequestViewModel utrvm = new() { TagId = tag.Id, NewContent = tag.Content };
 
-            return View(utrvm);
+                return View(utrvm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+            }
         }
 
         [Authorize]
@@ -120,24 +129,35 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/ChangeTag")]
         public async Task<IActionResult> ConfirmRewriteTag([FromForm]UpdateTagRequestViewModel utrvm)
         {
-            if (ModelState.IsValid)
+            try
             {
-                var tag = await _tagRepository.GetTagById(utrvm.TagId);
+                if (ModelState.IsValid)
+                {
+                    var sameTag = (await _tagRepository.GetTagByContent(utrvm.NewContent) != null) ? throw new CustomException($"Тег с контентом \'{utrvm.NewContent}\' уже существует") : true;
+                    
+                    var tag = await _tagRepository.GetTagById(utrvm.TagId);
 
-                var request = _mapper.Map<UpdateTagRequest>(utrvm);
+                    var request = _mapper.Map<UpdateTagRequest>(utrvm);
 
-                await _tagRepository.UpdateTag(tag, _mapper.Map<UpdateTagQuery>(request));
+                    await _tagRepository.UpdateTag(tag, _mapper.Map<UpdateTagQuery>(request));
 
-                _logger.LogInformation("Пользователь {email} изменил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Id);
+                    _logger.LogInformation("Пользователь {email} изменил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Id);
 
-                return RedirectToAction("TagList");
+                    return RedirectToAction("TagList");
+                }
+
+                int id = utrvm.TagId;
+
+                _logger.LogWarning("Неверно заполнена форма");
+
+                return RedirectToAction("RewriteTag", id);
             }
-
-            int id = utrvm.TagId;
-
-            _logger.LogWarning("Неверно заполнена форма");
-
-            return RedirectToAction("RewriteTag", id);
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+            }
         }
     }
 }

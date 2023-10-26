@@ -7,6 +7,8 @@ using System.Security.Cryptography.Xml;
 using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.BLL.Models.Comment;
 using ConnectionLib.DAL.Queries.Comment;
+using BlogNetworkB.Infrastructure.Exceptions;
+using BlogNetworkB.Models.CustomError;
 
 namespace BlogNetworkB.Controllers
 {
@@ -121,12 +123,45 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [Route("/[controller]/Author/EditComment")]
         [HttpGet]
-        public async Task<IActionResult> EditComment(int id)
+        public async Task<IActionResult> EditComment(int? id)
         {
-            var comment = await _commentRepository.GetCommentById(id);
-            UpdateCommentRequestViewModel ucrvm = new() { CommentId = comment.Id, NewContent = comment.Content };
+            try
+            {
+                if (int.TryParse(id.ToString(), out int isInt) == false)
+                {
+                    throw new CustomException($"Некорректно задан id: {id}");
+                }
 
-            return View(ucrvm);
+                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+
+                var comment = await _commentRepository.GetCommentById(isInt) ?? throw new CustomException($"Комментарий с id={id} не существует");
+
+                UpdateCommentRequestViewModel ucrvm = new() { CommentId = comment.Id, NewContent = comment.Content };
+                
+                if (!User.IsInRole("Moderator") && currAuthor.Id != comment.AuthorId)
+                {
+                    throw new CustomException($"Недостаточно прав для этого действия, {currAuthor.Email}");
+                }
+
+                return View(ucrvm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                if (ex.Message.Contains("Недостаточно прав"))
+                {
+                    return View("/Views/Alert/AccessDenied.cshtml", cevm);
+                }
+                if(ex.Message.Contains("не существует"))
+                {
+                    return View("/Views/Alert/NotFound.cshtml", cevm);
+                }
+                else
+                {
+                    return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                }
+            }
         }
 
         [Authorize]
@@ -155,15 +190,32 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpPost]
         [Route("/[controller]/DeleteComment")]
-        public async Task<IActionResult> DeleteComment(int id)
+        public async Task<IActionResult> DeleteComment(int? id)
         {
-            var comment = await _commentRepository.GetCommentById(id);
+            try
+            {
+                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
-            await _commentRepository.DeleteComment(comment);
+                if (int.TryParse(id.ToString(), out int isInt) == false) throw new CustomException($"Некорректно задан id: {id}");
 
-            _logger.LogInformation("Пользователь {email} удалил комментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.Id);
 
-            return RedirectToAction("CommentList");
+                var comment = await _commentRepository.GetCommentById(isInt) ?? throw new CustomException($"Комментария с id={id} не существует");
+
+
+                if (!User.IsInRole("Moderator") || comment.AuthorId != currAuthor.Id) throw new CustomException($"Недостаточно прав, {currAuthor.Email}");
+
+                await _commentRepository.DeleteComment(comment);
+
+                _logger.LogInformation("Пользователь {email} удалил комментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.Id);
+
+                return RedirectToAction("CommentList");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+            }
         }
     }
 }

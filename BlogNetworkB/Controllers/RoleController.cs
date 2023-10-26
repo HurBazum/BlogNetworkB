@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using BlogNetworkB.Infrastructure.Exceptions;
 using BlogNetworkB.Models;
 using BlogNetworkB.Models.CustomError;
+using System.Diagnostics.Eventing.Reader;
 
 namespace BlogNetworkB.Controllers
 {
@@ -151,7 +152,7 @@ namespace BlogNetworkB.Controllers
 
                 if (!hasRole)
                 {
-                    throw new CustomException($"Попытка удаления отсутвующей роли у пользователя");
+                    throw new CustomException($"Роль с id={rvm.RoleId} отсутствует у пользователя {author.Email}. Попытка удаления.");
                 }
 
                 if (hasRole && role.Name == "User")
@@ -169,7 +170,14 @@ namespace BlogNetworkB.Controllers
             {
                 _logger.LogError("{error}", ex.Message);
                 CustomErrorViewModel cevm = new CustomErrorViewModel { Message = ex.Message };
-                return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                if (ex.Message.Contains("не существует"))
+                {
+                    return View("/Views/Alert/NotFound.cshtml", cevm);
+                }
+                else
+                {
+                    return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                }
             }
         }
 
@@ -178,7 +186,21 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpGet]
         [Route("/[controller]/AddNewRole")]
-        public IActionResult AddRoleToRoles() => View();
+        public IActionResult AddRoleToRoles()
+        {
+            try
+            {
+                if (!User.IsInRole("Admin")) throw new CustomException($"Недостаточно прав, {HttpContext.User.Claims.FirstOrDefault().Value}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return View("/Views/Alert/AccessDenied.cshtml", cevm);
+            }
+        }
 
         [Authorize]
         [HttpPost]
@@ -220,11 +242,26 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpGet]
         [Route("/[controller]/RewriteRole")]
-        public async Task<IActionResult> RewriteRole(int id)
+        public async Task<IActionResult> RewriteRole(int? id)
         {
-            var role = await _roleRepository.GetRoleById(id);
+            try
+            {
+                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
-            return View("EditRoleDescription", new UpdateRoleRequestViewModel { RoleId = id, RoleName = role.Name, NewDescription = role.Description });
+                if (!User.IsInRole("Admin")) throw new CustomException($"Недостаточно прав, {currAuthor.Email}");
+
+                if (int.TryParse(id.ToString(), out int isInt) == false) throw new CustomException($"Некорректно задан id: {id}");
+
+                var role = await _roleRepository.GetRoleById(isInt) ?? throw new CustomException($"Роли с id={id} не существует");
+
+                return View("EditRoleDescription", new UpdateRoleRequestViewModel { RoleId = isInt, RoleName = role.Name, NewDescription = role.Description });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{error}", ex.Message);
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return GetErrorPage(cevm, ex.Message);
+            }
         }
 
         [Authorize]
@@ -255,11 +292,16 @@ namespace BlogNetworkB.Controllers
         [Authorize]
         [HttpPost]
         [Route("/[controller]/DeleteRole")]
-        public async Task<IActionResult> DeleteRole(int id)
+        public async Task<IActionResult> DeleteRole(int? id)
         {
-            var role = await _roleRepository.GetRoleById(id);
             try
             {
+                if (!User.IsInRole("Admin")) throw new CustomException($"Недостаточно прав, {HttpContext.User.Claims.FirstOrDefault().Value}");
+
+                if (int.TryParse(id.ToString(), out int isInt) == false) throw new CustomException($"Некорректно задан id: {id}");
+
+                var role = await _roleRepository.GetRoleById(isInt) ?? throw new CustomException($"Роли с id={id} не существует"); ;
+
                 if (role.Name == "User" || role.Name == "Moderator" || role.Name == "Admin")
                 {
                     throw new CustomException($"Попытка удалить одну из стандартных ролей: {role.Name}");
@@ -275,8 +317,28 @@ namespace BlogNetworkB.Controllers
             {
                 _logger.LogError("{error}", ex.Message);
                 CustomErrorViewModel cevm = new() { Message = ex.Message };
+                return GetErrorPage(cevm, ex.Message);
+            }
+        }
+
+        #region ошибки
+
+        ActionResult GetErrorPage(CustomErrorViewModel cevm, string message)
+        {
+            if (message.Contains("Недостаточно прав"))
+            {
+                return View("/Views/Alert/AccessDenied.cshtml", cevm);
+            }
+            if (message.Contains("не существует"))
+            {
+                return View("/Views/Alert/NotFound.cshtml", cevm);
+            }
+            else
+            {
                 return View("/Views/Alert/SomethingWrong.cshtml", cevm);
             }
         }
+
+        #endregion
     }
 }

@@ -2,6 +2,9 @@
 
 namespace BlogNetworkB.Infrastructure.Extensions
 {
+    /// <summary>
+    /// только для ICollection<Role>
+    /// </summary>
     public static class CollectionToString
     {
         public static string ConvertToString(this ICollection<Role> ts)

@@ -10,9 +10,11 @@
         <input class="id-input" asp-for="ArticleId" value="@Model.ArticleId" />
         <div>
             <input class="no-brdr caption-field pdng-norm mrg-one-bttm" asp-for="NewTitle" placeholder="Заголовок" value="@Model.NewTitle" />
+            <span asp-validation-for="NewTitle"></span>
         </div>
         <div class="article-div">
             <textarea class="article pdng-norm mrg-one-bttm no-brdr" asp-for="NewContent" placeholder="Напишите статью. . .">@Model.NewContent</textarea>
+            <span asp-validation-for="NewContent"></span>
         </div>
 
         <div class="btn-flex-blck">

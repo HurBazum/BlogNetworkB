@@ -15,6 +15,7 @@
 
             <label asp-for="NewDescription"></label><br />
             <textarea class="comment-area role-area" asp-for="NewDescription">@Model.NewDescription</textarea>
+            <span asp-validation-for="RoleName"></span>
         </div>
 
         <div class="btn-flex-blck">
