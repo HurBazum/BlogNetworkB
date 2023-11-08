@@ -29,6 +29,12 @@ namespace BlogNetworkB.Infrastructure.Mapping
             CreateMap<UpdateAuthorRequestViewModel, UpdateAuthorRequest>();
             CreateMap<UpdateAuthorRequest, UpdateAuthorQuery>();
 
+            CreateMap<RegisterViewModel, AuthorDTO>();
+            CreateMap<Author, AuthorDTO>().ForMember("AuthorId", dto => dto.MapFrom(a => a.Id));
+            CreateMap<AuthorDTO, Author>();
+            CreateMap<AuthorDTO, AuthorViewModel>();
+            CreateMap<AuthorViewModel, AuthorDTO>();
+
             // article
             CreateMap<ArticleViewModel, Article>();
             CreateMap<Article, ArticleViewModel>()
@@ -37,11 +43,21 @@ namespace BlogNetworkB.Infrastructure.Mapping
             CreateMap<UpdateArticleRequestViewModel, UpdateArticleRequest>();
             CreateMap<UpdateArticleRequest, UpdateArticleQuery>();
 
+            CreateMap<Article, ArticleDTO>().ForMember("ArticleId", avm => avm.MapFrom(dto => dto.Id));
+            CreateMap<ArticleDTO, Article>();
+            CreateMap<ArticleDTO, ArticleViewModel>()
+                .ForMember("CreatorId", avm => avm.MapFrom(dto => dto.AuthorId));
+            CreateMap<ArticleViewModel, ArticleDTO>();
+
             // tag
             CreateMap<TagViewModel, Tag>();
             CreateMap<Tag, TagViewModel>().ForMember("TagId", tvm => tvm.MapFrom(t => t.Id));
             CreateMap<UpdateTagRequestViewModel, UpdateTagRequest>();
             CreateMap<UpdateTagRequest, UpdateTagQuery>();
+
+            CreateMap<Tag, TagDTO>().ForMember("TagId", tvm => tvm.MapFrom(dto => dto.Id));
+            CreateMap<TagDTO, Tag>();
+            CreateMap<TagDTO, TagViewModel>();
 
             // comment
             CreateMap<Comment, CommentViewModel>().ForMember("CommentId", cvm => cvm.MapFrom(c => c.Id));
@@ -49,11 +65,21 @@ namespace BlogNetworkB.Infrastructure.Mapping
             CreateMap<UpdateCommentRequestViewModel, UpdateCommentRequest>();
             CreateMap<UpdateCommentRequest, UpdateCommentQuery>();
 
+            CreateMap<Comment, CommentDTO>().ForMember("CommentId", cvm => cvm.MapFrom(dto => dto.Id));
+            CreateMap<CommentDTO, Comment>();
+            CreateMap<CommentDTO, CommentViewModel>();
+            CreateMap<CreateCommentViewModel, CommentDTO>();
+
             // role
             CreateMap<Role, RoleViewModel>().ForMember("RoleId", rvm => rvm.MapFrom(r => r.Id));
             CreateMap<RoleViewModel, Role>();
             CreateMap<UpdateRoleRequestViewModel, UpdateRoleDescriptionRequest>();
             CreateMap<UpdateRoleDescriptionRequest, UpdateRoleQuery>();
+
+            CreateMap<Role, RoleDTO>().ForMember("RoleId", rvm => rvm.MapFrom(dto => dto.Id));
+            CreateMap<RoleDTO, Role>();
+            CreateMap<RoleDTO, RoleViewModel>();
+            CreateMap<RoleViewModel, RoleDTO>();
         }
     }
 }

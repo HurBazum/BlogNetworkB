@@ -1,15 +1,13 @@
 ﻿using AutoMapper;
-using ConnectionLib.DAL.Repositories.Interfaces;
 using BlogNetworkB.Models.Account;
 using Microsoft.AspNetCore.Mvc;
-using ConnectionLib.DAL.Enteties;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.Infrastructure.Extensions;
 using BlogNetworkB.BLL.Models.Author;
-using ConnectionLib.DAL.Queries.Author;
+using BlogNetworkB.BLL.Services.Interfaces;
 using BlogNetworkB.Infrastructure.Exceptions;
 using BlogNetworkB.Models.CustomError;
 
@@ -19,21 +17,27 @@ namespace BlogNetworkB.Controllers
     [Route("/Author")]
     public class AuthorController : Controller
     {
-        readonly IAuthorRepository _authorRepository;
-        readonly IRoleRepository _roleRepository;
-        readonly IArticleRepository _articleRepository;
-        readonly ICommentRepository _commentRepository;
         readonly IMapper _mapper;
         readonly ILogger<AuthorController> _logger;
+        readonly IAuthorService _authorService;
+        readonly IRoleService _roleService;
+        readonly IArticleService _articleService;
+        readonly ICommentService _commentService;
 
-        public AuthorController(IAuthorRepository authorRepository, IRoleRepository roleRepository, IArticleRepository articleRepository, ICommentRepository commentRepository, IMapper mapper, ILogger<AuthorController> logger)
+        public AuthorController(
+            IMapper mapper,
+            ILogger<AuthorController> logger,
+            IAuthorService authorService,
+            IRoleService roleService,
+            IArticleService articleService,
+            ICommentService commentService)
         {
-            _authorRepository = authorRepository;
-            _roleRepository = roleRepository;
-            _articleRepository = articleRepository;
-            _commentRepository = commentRepository;
             _mapper = mapper;
             _logger = logger;
+            _authorService = authorService;
+            _roleService = roleService;
+            _articleService = articleService;
+            _commentService = commentService;
         }
 
         [Route("/[controller]/Register")]
@@ -51,10 +55,7 @@ namespace BlogNetworkB.Controllers
         {
             if(ModelState.IsValid)
             {
-                // емейл должен быть уникальным
-                var authorExists = await _authorRepository.GetAuthorByEmail(registerViewModel.Email);
-
-                if(authorExists != null)
+                if(_authorService.AuthorExists(registerViewModel.Email).Result)
                 {
                     ModelState.AddModelError("Email", "Пользователь с таким email уже зарегистрирован");
 
@@ -66,22 +67,27 @@ namespace BlogNetworkB.Controllers
                 registerViewModel.FirstName = registerViewModel.FirstName.UpFirstLowOther();
                 registerViewModel.LastName = registerViewModel.LastName.UpFirstLowOther();
 
-                var author = _mapper.Map<Author>(registerViewModel);
+                var author = _mapper.Map<AuthorDTO>(registerViewModel);
 
-                author.Roles.Add(_roleRepository.GetAll().Result[0]);
+                author.RoleDTOs.Add(_roleService.RoleDTOlist().Result[0]);
 
-                int countAuthors = _authorRepository.GetAll().Result.Length;
-
-                // создаём первого администратора
-                // он может добавлять роли остальным пользователям
-                if (countAuthors == 0)
-                {                    
-                    author.Roles.Add(_roleRepository.GetRoleById(3).Result);
+                if(_authorService.AuthorDTOlist().Result.Length == 0)
+                {
+                    author.RoleDTOs.Add(_roleService.RoleDTOlist().Result[3]);
                 }
 
-                await _authorRepository.AddAuthor(author);
+                try
+                {
+                    await _authorService.AddAuthor(author);
+                }
+                catch(Exception e)
+                {
+                    CustomErrorViewModel cevm = new() { Message = $"{author.RoleDTOs[0].RoleId}\n{author.RoleDTOs[0].Name}\n{author.RoleDTOs[0].Description}||{author.Email}=={author.AuthorId}=={author.RoleDTOs.Count}" };
+                    _logger.LogError("{error}", e.Message);
+                    return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                }
 
-                _logger.LogInformation("Добавлен пользователь {email}: {roles}", registerViewModel.Email, author.Roles.ConvertToString());
+                _logger.LogInformation("Добавлен пользователь {email}: {roles}", registerViewModel.Email, author.RoleDTOs.RoleToString());
 
                 return RedirectToAction("Index", "Home");
             }
@@ -101,7 +107,7 @@ namespace BlogNetworkB.Controllers
         {
             if (ModelState.IsValid) 
             {
-                var author = await _authorRepository.GetAuthorByEmail(loginViewModel.Email);
+                var author = await _authorService.GetAuthorDTOByEmail(loginViewModel.Email);
 
                 if(author == null)
                 {
@@ -117,26 +123,34 @@ namespace BlogNetworkB.Controllers
                     return View("Login");
                 }
 
-                var claims = new List<Claim>
+                try
                 {
-                    new Claim(ClaimsIdentity.DefaultNameClaimType, author.Email)
-                };
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimsIdentity.DefaultNameClaimType, author.Email)
+                    };
 
-                var roles = await _authorRepository.GetAuthorsRoles(author);
+                    var roles = await _authorService.GetAuthorRoleDTOs(author);
+                    _logger.LogWarning("role => {roles}", roles.RoleToString());
+                    foreach (var role in roles)
+                    {
+                        claims.Add(new Claim(ClaimsIdentity.DefaultRoleClaimType, role.Name));
+                    }
 
-                foreach (var role in roles)
-                {
-                    claims.Add(new Claim(ClaimsIdentity.DefaultRoleClaimType, role.Name));
+                    var claimsIdentity = new ClaimsIdentity(claims, "AppCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
                 }
-
-                var claimsIdentity = new ClaimsIdentity(claims, "AppCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
-
+                catch (Exception ex)
+                {
+                    _logger.LogError("{error}", ex.Message);
+                    CustomErrorViewModel cevm = new() { Message = ex.Message };
+                    return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                }
+                
                 var avm = _mapper.Map<AuthorViewModel>(author);
 
-                avm.ArticlesCount = _articleRepository.GetArticlesByAuthor(author).Result.Length;
-                avm.CommentsCount = _commentRepository.GetCommentByAuthor(author).Result.Length;
+                avm.ArticlesCount = _articleService.GetArticleDTOsByAuthor(author).Result.Length;
+                avm.CommentsCount = _commentService.GetCommentDTOsByAuthor(author).Result.Length;
 
                 _logger.LogInformation("Пользователь {email} авторизовался", author.Email);
                 
@@ -162,12 +176,12 @@ namespace BlogNetworkB.Controllers
                 }
 
                 // выражение объединения
-                var a = _authorRepository.GetAuthorById(isInt).Result ?? throw new CustomException($"Пользователя с id={id} не существует");
+                var author = _authorService.GetAuthorDTOById(isInt).Result ?? throw new CustomException($"Пользователя с id={id} не существует");
                 
-                var avm = _mapper.Map<AuthorViewModel>(a);
+                var avm = _mapper.Map<AuthorViewModel>(author);
 
-                avm.ArticlesCount = _articleRepository.GetArticlesByAuthor(a).Result.Length;
-                avm.CommentsCount = _commentRepository.GetCommentByAuthor(a).Result.Length;
+                avm.ArticlesCount = _articleService.GetArticleDTOsByAuthor(author).Result.Length;
+                avm.CommentsCount = _commentService.GetCommentDTOsByAuthor(author).Result.Length;
 
                 _logger.LogInformation("Пользователь {guest} перешёл на страницу пользователя {author}", HttpContext.User.Claims.FirstOrDefault().Value, avm.Email);
 
@@ -200,12 +214,12 @@ namespace BlogNetworkB.Controllers
             }
             else
             {
-                var a = _authorRepository.GetAuthorById((int)id).Result;
+                var a = _authorService.GetAuthorDTOById((int)id).Result;
 
                 var avm = _mapper.Map<AuthorViewModel>(a);
 
-                avm.ArticlesCount = _articleRepository.GetArticlesByAuthor(a).Result.Length;
-                avm.CommentsCount = _commentRepository.GetCommentByAuthor(a).Result.Length;
+                avm.ArticlesCount = _articleService.GetArticleDTOsByAuthor(a).Result.Length;
+                avm.CommentsCount = _commentService.GetCommentDTOsByAuthor(a).Result.Length;
 
                 return View(avm);
             }
@@ -229,15 +243,15 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/All")]
         public async Task<IActionResult> AuthorsList()
         {
-            var authors = await _authorRepository.GetAll();
+            var authors = await _authorService.AuthorDTOlist();
 
             var authorsArray = _mapper.Map<AuthorViewModel[]>(authors);
 
             for(int i = 0; i < authors.Length; i++)
             {
-                authorsArray[i].ArticlesCount = _articleRepository.GetArticlesByAuthor(authors[i]).Result.Length;
-                authorsArray[i].CommentsCount = _commentRepository.GetCommentByAuthor(authors[i]).Result.Length;
-                authorsArray[i].Roles = _authorRepository.GetAuthorsRoles(authors[i]).Result.Select(r => r.Name).ToList();
+                authorsArray[i].ArticlesCount = _articleService.GetArticleDTOsByAuthor(authors[i]).Result.Length;
+                authorsArray[i].CommentsCount = _commentService.GetCommentDTOsByAuthor(authors[i]).Result.Length;
+                authorsArray[i].Roles = _authorService.GetAuthorRoleDTOs(authors[i]).Result.Select(r => r.Name).ToList();
             }
 
             _logger.LogInformation("{email} перешёл к списку всех пользователей\n", HttpContext.User.Claims.FirstOrDefault().Value);
@@ -252,7 +266,7 @@ namespace BlogNetworkB.Controllers
         {
             try
             {
-                var author = await _authorRepository.GetAuthorById(id);
+                var author = await _authorService.GetAuthorDTOById(id);
 
                 var currAuthor = HttpContext.User.Claims.FirstOrDefault().Value;
 
@@ -262,7 +276,7 @@ namespace BlogNetworkB.Controllers
                 }
                 else
                 {
-                    await _authorRepository.DeleteAuthor(author);
+                    await _authorService.DeleteAuthor(author);
 
                     _logger.LogInformation("Пользователь {email} удалил пользователя {author}", currAuthor, author.Email);
 
@@ -289,14 +303,14 @@ namespace BlogNetworkB.Controllers
                     throw new CustomException($"Некорректно задан id: {id}");
                 }
 
-                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var currAuthor = await _authorService.GetAuthorDTOByEmail(User.Claims.FirstOrDefault().Value);
 
-                if(!User.IsInRole("Moderator") && currAuthor.Id != isInt)
+                if(!User.IsInRole("Moderator") && currAuthor.AuthorId != isInt)
                 {
                     throw new CustomException($"Недостаточно прав, {currAuthor.Email}");
                 }
 
-                var author = await _authorRepository.GetAuthorById(isInt) ?? throw new CustomException($"Пользователь с id={id} не существует");
+                var author = await _authorService.GetAuthorDTOById(isInt) ?? throw new CustomException($"Пользователь с id={id} не существует");
 
                 return View(new UpdateAuthorRequestViewModel { AuthorId = id });
             }
@@ -319,7 +333,11 @@ namespace BlogNetworkB.Controllers
             }
         }
 
-        
+        /// <summary>
+        /// in progress. . .
+        /// </summary>
+        /// <param name="uarvm"></param>
+        /// <returns></returns>
         [Authorize]
         [HttpPost]
         [Route("/[controller]/Edit")]
@@ -338,19 +356,19 @@ namespace BlogNetworkB.Controllers
                 }
 
                 // при смене имейла текущего пользователя, будет выполняться Logout()
-                var authAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var authAuthor = await _authorService.GetAuthorDTOByEmail(User.Claims.FirstOrDefault().Value);
 
                 if (uarvm.AuthorId == null)
                 {
                     var updateMeRequest = _mapper.Map<UpdateAuthorRequest>(uarvm);
 
-                    await _authorRepository.UpdateAuthor(authAuthor, _mapper.Map<UpdateAuthorQuery>(updateMeRequest));
+                    await _authorService.UpdateAuthor(authAuthor, updateMeRequest);
 
-                    _logger.LogInformation("Пользователь {id} сменил данные о себе", authAuthor.Id);
+                    _logger.LogInformation("Пользователь {id} сменил данные о себе", authAuthor.AuthorId);
 
                     if(updateMeRequest.NewEmail != null)
                     {
-                        _logger.LogInformation("Пользователь {id} сменил email", authAuthor.Id);
+                        _logger.LogInformation("Пользователь {id} сменил email", authAuthor.AuthorId);
 
                         return RedirectToAction("Logout");
                     }
@@ -358,19 +376,19 @@ namespace BlogNetworkB.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                var author = await _authorRepository.GetAuthorById((int)uarvm.AuthorId);
+                var author = await _authorService.GetAuthorDTOById((int)uarvm.AuthorId);
                 var uar = _mapper.Map<UpdateAuthorRequest>(uarvm);
 
-                await _authorRepository.UpdateAuthor(author, _mapper.Map<UpdateAuthorQuery>(uar));
+                await _authorService.UpdateAuthor(author, uar);
 
-                if (uar.NewEmail != null && authAuthor.Id == uarvm.AuthorId)
+                if (uar.NewEmail != null && authAuthor.AuthorId == uarvm.AuthorId)
                 {
-                    _logger.LogInformation("Пользователь {id} сменил email", authAuthor.Id);
+                    _logger.LogInformation("Пользователь {id} сменил email", authAuthor.AuthorId);
 
                     return RedirectToAction("Logout");
                 }
 
-                _logger.LogInformation("Пользователь {email} сменил данные пользователю {id}", authAuthor.Email, author.Id);
+                _logger.LogInformation("Пользователь {email} сменил данные пользователю {id}", authAuthor.Email, author.AuthorId);
 
                 return RedirectToAction("AuthorsList");
             }
@@ -382,20 +400,23 @@ namespace BlogNetworkB.Controllers
             return View("EditAuthor", authorId);
         }
 
-        async Task<AuthorListViewModel> GetAuthorsList()
-        {
-            var authors = await _authorRepository.GetAll();
+        ///<summary>
+        /// 
+        ///</summary>
+        //async Task<AuthorListViewModel> GetAuthorsList()
+        //{
+        //    var authors = await _authorRepository.GetAll();
 
-            var authorsArray = _mapper.Map<AuthorViewModel[]>(authors);
+        //    var authorsArray = _mapper.Map<AuthorViewModel[]>(authors);
 
-            for (int i = 0; i < authors.Length; i++)
-            {
-                authorsArray[i].ArticlesCount = _articleRepository.GetArticlesByAuthor(authors[i]).Result.Length;
-                authorsArray[i].CommentsCount = _commentRepository.GetCommentByAuthor(authors[i]).Result.Length;
-                authorsArray[i].Roles = _authorRepository.GetAuthorsRoles(authors[i]).Result.Select(r => r.Name).ToList();
-            }
+        //    for (int i = 0; i < authors.Length; i++)
+        //    {
+        //        authorsArray[i].ArticlesCount = _articleRepository.GetArticlesByAuthor(authors[i]).Result.Length;
+        //        authorsArray[i].CommentsCount = _commentRepository.GetCommentByAuthor(authors[i]).Result.Length;
+        //        authorsArray[i].Roles = _authorRepository.GetAuthorsRoles(authors[i]).Result.Select(r => r.Name).ToList();
+        //    }
 
-            return new AuthorListViewModel { Authors = authorsArray };
-        }
+        //    return new AuthorListViewModel { Authors = authorsArray };
+        //}
     }
 }

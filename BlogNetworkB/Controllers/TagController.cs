@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
-using ConnectionLib.DAL.Repositories.Interfaces;
-using ConnectionLib.DAL.Enteties;
 using BlogNetworkB.Models.Tag;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.BLL.Models.Tag;
-using ConnectionLib.DAL.Queries.Tag;
 using BlogNetworkB.Infrastructure.Exceptions;
 using BlogNetworkB.Models.CustomError;
+using BlogNetworkB.BLL.Services.Interfaces;
+using System.Runtime.InteropServices;
 
 namespace BlogNetworkB.Controllers
 {
@@ -15,13 +14,13 @@ namespace BlogNetworkB.Controllers
     [Route("/Tags")]
     public class TagController : Controller
     {
-        readonly ITagRepository _tagRepository;
+        readonly ITagService _tagService;
         readonly IMapper _mapper;
         readonly ILogger<TagController> _logger;
 
-        public TagController(ITagRepository tagRepository, IMapper mapper, ILogger<TagController> logger)
+        public TagController(ITagService tagService, IMapper mapper, ILogger<TagController> logger)
         {
-            _tagRepository = tagRepository;
+            _tagService = tagService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -41,11 +40,10 @@ namespace BlogNetworkB.Controllers
                 if (ModelState.IsValid)
                 {
                     // проверка на наличие тега с таким же контентом
-                    var tag = (await _tagRepository.GetTagByContent(tagViewModel.Content) != null) ? null : _mapper.Map<Tag>(tagViewModel);
-
+                    var tag = (await _tagService.GetTagsDTOsByContent(tagViewModel.Content) != null) ? null : _mapper.Map<TagDTO>(tagViewModel);
                     if (tag != null)
                     {
-                        await _tagRepository.AddTag(tag);
+                        await _tagService.AddTag(tag);
 
                         _logger.LogInformation("Пользователь {email} добавил тег {tagContent}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Content);
 
@@ -71,7 +69,7 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/All")]
         public async Task<IActionResult> TagList()
         {
-            var tags = await _tagRepository.GetAll();
+            var tags = await _tagService.GetAllTagsDTOs();
 
             var tagArray = _mapper.Map<TagViewModel[]>(tags);
 
@@ -85,13 +83,12 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/DeleteTag")]
         public async Task<IActionResult> DeleteTag(int id)
         {
-            var tag = await _tagRepository.GetTagById(id);
 
             try
             {
-                await _tagRepository.DeleteTag(tag);
-                _logger.LogInformation("Пользователь {email} удалил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Id);
+                await _tagService.DeleteTag(id);
 
+                _logger.LogInformation("Пользователь {email} удалил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, id);
             }
             catch(Exception ex)
             {
@@ -110,9 +107,9 @@ namespace BlogNetworkB.Controllers
         {
             try
             {
-                var tag = await _tagRepository.GetTagById(id) ?? throw new CustomException($"Непредвиденная ошибка");
+                var tag = await _tagService.GetTagDTOById(id) ?? throw new CustomException($"Непредвиденная ошибка");
 
-                UpdateTagRequestViewModel utrvm = new() { TagId = tag.Id, NewContent = tag.Content };
+                UpdateTagRequestViewModel utrvm = new() { TagId = tag.TagId, NewContent = tag.Content };
 
                 return View(utrvm);
             }
@@ -133,15 +130,18 @@ namespace BlogNetworkB.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    var sameTag = (await _tagRepository.GetTagByContent(utrvm.NewContent) != null) ? throw new CustomException($"Тег с контентом \'{utrvm.NewContent}\' уже существует") : true;
-                    
-                    var tag = await _tagRepository.GetTagById(utrvm.TagId);
+                    if(await _tagService.SearchSameTag(utrvm.NewContent))
+                    {
+                        throw new CustomException($"Тег с контентом \'{utrvm.NewContent}\' уже существует");
+                    }
+
+                    var tag = await _tagService.GetTagDTOById(utrvm.TagId);
 
                     var request = _mapper.Map<UpdateTagRequest>(utrvm);
 
-                    await _tagRepository.UpdateTag(tag, _mapper.Map<UpdateTagQuery>(request));
+                    await _tagService.UpdateTag(tag, request);
 
-                    _logger.LogInformation("Пользователь {email} изменил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, tag.Id);
+                    _logger.LogInformation("Пользователь {email} изменил тег {id}", HttpContext.User.Claims.FirstOrDefault().Value, tag.TagId);
 
                     return RedirectToAction("TagList");
                 }

@@ -1,4 +1,5 @@
-﻿using ConnectionLib.DAL.Enteties;
+﻿using BlogNetworkB.BLL.Models.Role;
+using ConnectionLib.DAL.Enteties;
 
 namespace BlogNetworkB.Infrastructure.Extensions
 {
@@ -16,6 +17,16 @@ namespace BlogNetworkB.Infrastructure.Extensions
                 col += item.Name + " ";
             }
 
+            return col;
+        }
+
+        public static string RoleToString(this ICollection<RoleDTO> ts)
+        {
+            string col = string.Empty;
+            foreach (RoleDTO item in ts)
+            {
+                col += item.Name + " ";
+            }
             return col;
         }
     }

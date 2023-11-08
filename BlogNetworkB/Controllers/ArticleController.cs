@@ -1,7 +1,4 @@
 ﻿using AutoMapper;
-using ConnectionLib.DAL.Repositories.Interfaces;
-using ConnectionLib.DAL.Enteties;
-using ConnectionLib.DAL.Queries.Article;
 using BlogNetworkB.BLL.Models.Article;
 using BlogNetworkB.Models.Article;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +8,8 @@ using BlogNetworkB.Models.Comment;
 using Microsoft.AspNetCore.Mvc.Filters;
 using BlogNetworkB.Infrastructure.Exceptions;
 using BlogNetworkB.Models.CustomError;
+using BlogNetworkB.BLL.Services.Interfaces;
+using BlogNetworkB.BLL.Models.Author;
 
 namespace BlogNetworkB.Controllers
 {
@@ -18,20 +17,26 @@ namespace BlogNetworkB.Controllers
     [Route("/Article")]
     public class ArticleController : Controller
     {
-        readonly IArticleRepository _articleRepository;
-        readonly IAuthorRepository _authorRepository;
-        readonly ITagRepository _tagRepository;
-        readonly ICommentRepository _commentRepository;
         readonly IMapper _mapper;
         readonly ILogger<ArticleController> _logger;
-        public ArticleController(IArticleRepository articleRepository, IAuthorRepository authorRepository, ICommentRepository commentRepository, ITagRepository tagRepository, IMapper mapper, ILogger<ArticleController> logger)
+        readonly IArticleService _articleService;
+        readonly IAuthorService _authorService;
+        readonly ICommentService _commentService;
+        readonly ITagService _tagService;
+        public ArticleController(
+            IMapper mapper,
+            ILogger<ArticleController> logger,
+            IAuthorService authorService, 
+            IArticleService articleService,
+            ICommentService commentService,
+            ITagService tagService)
         {
-            _articleRepository = articleRepository;
-            _authorRepository = authorRepository;
-            _commentRepository = commentRepository;
-            _tagRepository = tagRepository;
             _mapper = mapper;
             _logger = logger;
+            _authorService = authorService;
+            _articleService = articleService;
+            _commentService = commentService;
+            _tagService = tagService;
         }
 
         public IActionResult Index()
@@ -51,7 +56,7 @@ namespace BlogNetworkB.Controllers
                     avm = new ArticleViewModel();
                 }
 
-                var tags = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
+                var tags = _tagService.GetAllTagsDTOs().Result.Select(dto => dto.Content).ToList();
 
                 if (!tags.Any())
                 {
@@ -89,13 +94,11 @@ namespace BlogNetworkB.Controllers
         {
             if(ModelState.IsValid)
             {
-                var article = _mapper.Map<Article>(articleViewModel);
+                var article = _mapper.Map<ArticleDTO>(articleViewModel);
 
-                var author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var author = await _authorService.GetAuthorDTOByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
-                article.AuthorId = author.Id;
-
-                article.Author = author;
+                article.AuthorId = author.AuthorId;
 
                 article.CreatedDate = DateTime.UtcNow;
 
@@ -105,22 +108,18 @@ namespace BlogNetworkB.Controllers
 
                     _logger.LogWarning("Не были указаны теги");
 
-                    tags = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToArray();
+                    tags = _tagService.GetAllTagsDTOs().Result.Select(dto => dto.Content).ToArray();
 
                     articleViewModel.ArticleTags = tags;
 
                     return View("WriteArticle", articleViewModel);
                 }
 
-                foreach(var t in tags)
-                {
-                    var tag = await _tagRepository.GetTagByContent(t);
-                    article.Tags.Add(tag);
-                }
+                article.ArticleTagDTOs = await _tagService.GetTagsDTOsByContent(tags);
 
                 try
                 {
-                    await _articleRepository.AddArticle(article);
+                    await _articleService.AddArticle(article);
 
                     _logger.LogInformation("Статья '{article}' была создана пользователем {email}", article.Title, author.Email);
                 }
@@ -132,8 +131,8 @@ namespace BlogNetworkB.Controllers
                 }
 
                 var model = _mapper.Map<AuthorViewModel>(author);
-                model.ArticlesCount = _articleRepository.GetArticlesByAuthor(author).Result.Length;
-                model.CommentsCount = _commentRepository.GetCommentByAuthor(author).Result.Length;
+                model.ArticlesCount = _articleService.GetArticleDTOsByAuthor(author).Result.Length;
+                model.CommentsCount = _commentService.GetCommentDTOsByAuthor(author).Result.Length;
 
                 return View("/Views/Author/MyPage.cshtml", model);
             }
@@ -142,9 +141,8 @@ namespace BlogNetworkB.Controllers
 
             //// чтоб было возможно выбрать из всех тегов, а не только
             //// тех, что были переданны в этот метод
-            var tagsName = _tagRepository.GetAll().Result.Select(tag => tag.Content).ToList();
+            var tagsName = _tagService.GetAllTagsDTOs().Result.Select(dto => dto.Content).ToList();
 
-            //articleViewModel.ArticleTags = tagsName;
             foreach (var tag in tagsName)
             {
                 articleViewModel.ArticleTags.Add(tag);
@@ -159,28 +157,28 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/Author/Articles")]
         public async Task<IActionResult> MyArticlesList(int? id)
         {
-            Author author = new();
+            AuthorDTO author = new();
 
             if (id == null)
             {
-                author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                author = await _authorService.GetAuthorDTOByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
                 _logger.LogInformation("Пользователь {email} перешёл к списку своих статей", author.Email);
             }
             if(id != null)
             {
-                author = await _authorRepository.GetAuthorById((int)id);
+                author = await _authorService.GetAuthorDTOById((int)id);
 
                 _logger.LogInformation("Пользователь {currEmail} перешёл к списку статей автора {email}", HttpContext.User.Claims.FirstOrDefault().Value, author.Email);
             }
 
-            var articles = await _articleRepository.GetArticlesByAuthor(author);
-            
-            var avmArray = _mapper.Map<ArticleViewModel[]>(articles);
+            var articles = await _articleService.GetArticleDTOsByAuthor(author);
+
+            var avmArray = _mapper.Map<ArticleViewModel[]>(await _articleService.GetArticleDTOsByAuthor(author));
 
             for(int i = 0; i < articles.Length; i++)
             {
-                avmArray[i].ArticleTags = _articleRepository.GetArticlesTags(articles[i]).Result.Select(t  => t.Content).ToList();
+                avmArray[i].ArticleTags = _articleService.GetArticleTagsDTOs(articles[i]).Result.Select(dto => dto.Content).ToList();
             }
 
             foreach (var article in avmArray)
@@ -196,18 +194,18 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/AllArticles")]
         public async Task<IActionResult> ArticleList()
         {
-            var articles = await _articleRepository.GetAll();
+            var articles = await _articleService.GetAllArticleDTOs();
 
             var avmArray = _mapper.Map<ArticleViewModel[]>(articles);
 
             for(int i = 0; i < articles.Length; i++)
             {
-                avmArray[i].ArticleTags = _articleRepository.GetArticlesTags(articles[i]).Result.Select(t => t.Content).ToList();
+                avmArray[i].ArticleTags = _articleService.GetArticleTagsDTOs(articles[i]).Result.Select(dto => dto.Content).ToList();
             }
 
             _logger.LogInformation("Пользователь {email} перешёл к списку всех статей", HttpContext.User.Claims.FirstOrDefault().Value);
 
-            return View("MyArticlesList", new ArticleListViewModel { Articles = avmArray });
+            return View("MyArticlesList", new ArticleListViewModel() { Articles = avmArray });
         }
 
         [Authorize]
@@ -215,18 +213,18 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/ReadArticle")]
         public async Task<IActionResult> ReadArticle(int id)
         {
-            var article = await _articleRepository.GetArticleById(id);
+            var article = await _articleService.GetArticleDTOById(id);
 
-            var author = await _authorRepository.GetAuthorById(article.AuthorId);
+            var author = await _authorService.GetAuthorDTOById(article.AuthorId);
 
             var avm = _mapper.Map<ArticleViewModel>(article);
 
-            var comments = await _commentRepository.GetCommentByArticle(article);
+            var comments = await _commentService.GetCommentDTOsByArticle(article);
 
             foreach(var comment in comments.ToList())
             {
                 var cvm = _mapper.Map<CommentViewModel>(comment);
-                cvm.AuthorName = _authorRepository.GetAuthorById(comment.AuthorId).Result.Email;
+                cvm.AuthorName = _authorService.GetAuthorDTOById(comment.AuthorId).Result.Email;
                 cvm.ArticleName = article.Title;
                 avm.ArticleComments.Comments.Add(cvm);
             }
@@ -246,16 +244,16 @@ namespace BlogNetworkB.Controllers
             // предотвращение доступа к изменению статьи без должной роли или без авторства
             try
             {
-                var currAuthor = await _authorRepository.GetAuthorByEmail(User.Claims.FirstOrDefault().Value);
+                var currAuthor = await _authorService.GetAuthorDTOByEmail(User.Claims.FirstOrDefault().Value);
 
-                var article = await _articleRepository.GetArticleById(id);
+                var article = await _articleService.GetArticleDTOById(id);
 
-                if (!User.IsInRole("Moderator") && currAuthor.Id != article.AuthorId)
+                if (!User.IsInRole("Moderator") && currAuthor.AuthorId != article.AuthorId)
                 {
                     throw new CustomException($"Недостаточно прав для этого действия, {currAuthor.Email}");
                 }
 
-                UpdateArticleRequestViewModel uarvm = new() { ArticleId = article.Id, NewTitle = article.Title, NewContent = article.Content };
+                UpdateArticleRequestViewModel uarvm = new() { ArticleId = article.ArticleId, NewTitle = article.Title, NewContent = article.Content };
 
                 return View(uarvm);
             }
@@ -274,16 +272,16 @@ namespace BlogNetworkB.Controllers
         {
             if(ModelState.IsValid)
             {
-                var article = await _articleRepository.GetArticleById(model.ArticleId);
+                var article = await _articleService.GetArticleDTOById(model.ArticleId);
                 
                 // для редиректа
                 //var currentAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
                 var uar = _mapper.Map<UpdateArticleRequest>(model);
 
-                await _articleRepository.UpdateArticle(article, _mapper.Map<UpdateArticleQuery>(uar));
+                await _articleService.UpdateArticle(article, uar);
 
-                _logger.LogInformation("Пользователь {email} изменил {articleId} статью", HttpContext.User.Claims.FirstOrDefault().Value, article.Id);
+                _logger.LogInformation("Пользователь {email} изменил {articleId} статью", HttpContext.User.Claims.FirstOrDefault().Value, article.ArticleId);
 
                 return RedirectToAction("ArticleList");
             }
@@ -298,11 +296,9 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/DeleteArticle")]
         public async Task<IActionResult> DeleteArticle(int id)
         {
-            var article = await _articleRepository.GetArticleById(id);
+            await _articleService.DeleteArticle(id);
 
-            await _articleRepository.DeleteArticle(article);
-
-            _logger.LogInformation("Пользователем {email} была удалена статья {article}", HttpContext.User.Claims.FirstOrDefault().Value, article.Id);
+            _logger.LogInformation("Пользователем {email} была удалена статья {article}", HttpContext.User.Claims.FirstOrDefault().Value, id);
 
             return RedirectToAction("ArticleList");
         }

@@ -1,39 +1,43 @@
 ﻿using AutoMapper;
-using ConnectionLib.DAL.Repositories.Interfaces;
-using ConnectionLib.DAL.Enteties;
 using BlogNetworkB.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using BlogNetworkB.Models.Account;
+using BlogNetworkB.BLL.Services.Interfaces;
 
 namespace BlogNetworkB.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        readonly IAuthorRepository _authorRepository;
-        readonly ICommentRepository _commentRepository;
-        readonly IArticleRepository _articleRepository;
+        readonly IAuthorService _authorService;
+        readonly ICommentService _commentService;
+        readonly IArticleService _articleService;
         readonly IMapper _mapper;
 
-        public HomeController(ILogger<HomeController> logger, IAuthorRepository authorRepository, IArticleRepository articleRepository, ICommentRepository commentRepository, IMapper mapper)
+        public HomeController(
+            ILogger<HomeController> logger,
+            IMapper mapper,
+            IAuthorService authorService,
+            ICommentService commentService,
+            IArticleService articleService)
         {
             _logger = logger;
-            _authorRepository = authorRepository;
-            _articleRepository = articleRepository;
-            _commentRepository = commentRepository;
             _mapper = mapper;
+            _authorService = authorService;
+            _commentService = commentService;
+            _articleService = articleService;
         }
 
         public async Task<IActionResult> Index()
         {
             if (User.Identity.IsAuthenticated)
             {
-                var author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var author = await _authorService.GetCurrentAuthorDTO(HttpContext);
                 var avm = _mapper.Map<AuthorViewModel>(author);
 
-                avm.ArticlesCount = _articleRepository.GetArticlesByAuthor(author).Result.Length;
-                avm.CommentsCount = _commentRepository.GetCommentByAuthor(author).Result.Length;
+                avm.ArticlesCount = _articleService.GetArticleDTOsByAuthor(author).Result.Length;
+                avm.CommentsCount = _commentService.GetCommentDTOsByAuthor(author).Result.Length;
 
                 return View("/Views/Author/MyPage.cshtml", avm);
             }

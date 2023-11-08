@@ -1,33 +1,37 @@
 ﻿using AutoMapper;
-using ConnectionLib.DAL.Repositories.Interfaces;
-using ConnectionLib.DAL.Enteties;
 using BlogNetworkB.Models.Comment;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography.Xml;
 using Microsoft.AspNetCore.Authorization;
 using BlogNetworkB.BLL.Models.Comment;
-using ConnectionLib.DAL.Queries.Comment;
 using BlogNetworkB.Infrastructure.Exceptions;
 using BlogNetworkB.Models.CustomError;
+using BlogNetworkB.BLL.Services.Interfaces;
+using BlogNetworkB.BLL.Models.Author;
 
 namespace BlogNetworkB.Controllers
 {
     [Route("/Comments")]
     public class CommentController : Controller
     {
-        readonly ICommentRepository _commentRepository;
-        readonly IArticleRepository _articleRepository;
-        readonly IAuthorRepository _authorRepository;
         readonly IMapper _mapper;
         readonly ILogger<CommentController> _logger;
+        readonly ICommentService _commentService;
+        readonly IArticleService _articleService;
+        readonly IAuthorService _authorService;
 
-        public CommentController(ICommentRepository commentRepository, IArticleRepository articleRepository, IAuthorRepository authorRepository, IMapper mapper, ILogger<CommentController> logger)
+        public CommentController(
+            IMapper mapper,
+            ILogger<CommentController> logger,
+            ICommentService commentService,
+            IArticleService articleService,
+            IAuthorService authorService)
         {
-            _commentRepository = commentRepository;
-            _articleRepository = articleRepository;
-            _authorRepository = authorRepository;
             _mapper = mapper;
             _logger = logger;
+            _authorService = authorService;
+            _commentService = commentService;
+            _articleService = articleService;
         }
 
         [Authorize]
@@ -35,30 +39,30 @@ namespace BlogNetworkB.Controllers
         [HttpGet]
         public async Task<IActionResult> AuthorCommentsList(int? id)
         {
-            Author author = new();
+            //Author author = new();
+            AuthorDTO author = new();
 
             if(id == null)
             {
-                author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                author = await _authorService.GetAuthorDTOByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
                 _logger.LogInformation("Пользователь {email} обратился к своим комментариям", author.Email);
             }
             if(id != null)
             {
-                author = await _authorRepository.GetAuthorById((int)id);
+                author = await _authorService.GetAuthorDTOById((int)id);
 
                 _logger.LogInformation("Пользователь {currAuthor} обратился к комментариям пользователя {email}", HttpContext.User.Claims.FirstOrDefault().Value, author.Email);
             }
 
-            var comments = await _commentRepository.GetCommentByAuthor(author);
+            var comments = await _commentService.GetCommentDTOsByAuthor(author);
             
             var cvm = _mapper.Map<CommentViewModel[]>(comments);
-
 
             for(int i = 0; i < comments.Length; i++)
             {
                 cvm[i].AuthorName = author.Email;
-                cvm[i].ArticleName = _articleRepository.GetArticleById(comments[i].ArticleId).Result.Title;
+                cvm[i].ArticleName = _articleService.GetArticleDTOById(comments[i].ArticleId).Result.Title;
             }
 
             CommentListViewModel clvm = new() { Comments = cvm };
@@ -71,14 +75,14 @@ namespace BlogNetworkB.Controllers
         [HttpGet]
         public async Task<IActionResult> CommentsList()
         {
-            var comments = await _commentRepository.GetAll();
+            var comments = await _commentService.GetAllCommentDTOs();
 
             var cvm = _mapper.Map<CommentViewModel[]>(comments);
 
             foreach (var view in cvm)
             {
-                var author = _authorRepository.GetAuthorById(view.AuthorId).Result;
-                var article = _articleRepository.GetArticleById(view.ArticleId).Result;
+                var author = await _authorService.GetAuthorDTOById(view.AuthorId);
+                var article = await _articleService.GetArticleDTOById(view.ArticleId);
                 view.AuthorName = author.Email;
                 view.ArticleName = article.Title;
             }
@@ -100,18 +104,20 @@ namespace BlogNetworkB.Controllers
         {
             if (ModelState.IsValid)
             {
-                var comment = _mapper.Map<Comment>(ccvm);
+                var comment = _mapper.Map<CommentDTO>(ccvm);
 
-                var author = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
-                var article = await _articleRepository.GetArticleById(ccvm.ArticleId);
+                var author = await _authorService.GetCurrentAuthorDTO(HttpContext);//await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var article = await _articleService.GetArticleDTOById(ccvm.ArticleId);//await _articleRepository.GetArticleById(ccvm.ArticleId);
 
-                comment.AuthorId = author.Id;
-                comment.ArticleId = article.Id;
+                comment.AuthorId = author.AuthorId;
+                comment.ArticleId = article.ArticleId;
 
-                await _commentRepository.AddComment(comment);
+                //await _commentRepository.AddComment(comment);
+                await _commentService.AddComment(comment);
 
-                _logger.LogInformation("Пользователь {email} оставил комментарий к статье {article}", author.Email, article.Id);
+                _logger.LogInformation("Пользователь {email} оставил комментарий к статье {article}", author.Email, article.ArticleId);
 
+                // ??
                 return RedirectToAction("Index", "Home");
             }
 
@@ -132,13 +138,13 @@ namespace BlogNetworkB.Controllers
                     throw new CustomException($"Некорректно задан id: {id}");
                 }
 
-                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var currAuthor = await _authorService.GetCurrentAuthorDTO(HttpContext);
 
-                var comment = await _commentRepository.GetCommentById(isInt) ?? throw new CustomException($"Комментарий с id={id} не существует");
+                var comment = await _commentService.GetCommentDTOById(isInt) ?? throw new CustomException($"Комментарий с id={id} не существует");
 
-                UpdateCommentRequestViewModel ucrvm = new() { CommentId = comment.Id, NewContent = comment.Content };
+                UpdateCommentRequestViewModel ucrvm = new() { CommentId = comment.CommentId, NewContent = comment.Content };
                 
-                if (!User.IsInRole("Moderator") && currAuthor.Id != comment.AuthorId)
+                if (!User.IsInRole("Moderator") && currAuthor.AuthorId != comment.AuthorId)
                 {
                     throw new CustomException($"Недостаточно прав для этого действия, {currAuthor.Email}");
                 }
@@ -171,13 +177,13 @@ namespace BlogNetworkB.Controllers
         {
             if (ModelState.IsValid)
             {
-                var comment = await _commentRepository.GetCommentById(ucvm.CommentId);
+                var comment = await _commentService.GetCommentDTOById(ucvm.CommentId);
 
                 var ucr = _mapper.Map<UpdateCommentRequest>(ucvm);
 
-                await _commentRepository.UpdateComment(comment, _mapper.Map<UpdateCommentQuery>(ucr));
+                await _commentService.UpdateComment(comment, ucr);
 
-                _logger.LogInformation("Пользователь {email} изменил коментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.Id);
+                _logger.LogInformation("Пользователь {email} изменил коментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.CommentId);
 
                 return RedirectToAction("CommentsList");
             }
@@ -194,21 +200,19 @@ namespace BlogNetworkB.Controllers
         {
             try
             {
-                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var currAuthor = await _authorService.GetCurrentAuthorDTO(HttpContext);
 
                 if (int.TryParse(id.ToString(), out int isInt) == false) throw new CustomException($"Некорректно задан id: {id}");
 
+                var comment = await _commentService.GetCommentDTOById(isInt) ?? throw new CustomException($"Комментария с id={id} не существует");
 
-                var comment = await _commentRepository.GetCommentById(isInt) ?? throw new CustomException($"Комментария с id={id} не существует");
+                if (!User.IsInRole("Moderator") && comment.AuthorId != currAuthor.AuthorId) throw new CustomException($"Недостаточно прав, {currAuthor.Email}");
 
+                await _commentService.DeleteComment(comment);
 
-                if (!User.IsInRole("Moderator") || comment.AuthorId != currAuthor.Id) throw new CustomException($"Недостаточно прав, {currAuthor.Email}");
+                _logger.LogInformation("Пользователь {email} удалил комментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.CommentId);
 
-                await _commentRepository.DeleteComment(comment);
-
-                _logger.LogInformation("Пользователь {email} удалил комментарий {comment}", HttpContext.User.Claims.FirstOrDefault().Value, comment.Id);
-
-                return RedirectToAction("CommentList");
+                return RedirectToAction("CommentsList");
             }
             catch (Exception ex)
             {

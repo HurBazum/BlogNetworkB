@@ -13,6 +13,7 @@ using BlogNetworkB.Infrastructure.Exceptions;
 using BlogNetworkB.Models;
 using BlogNetworkB.Models.CustomError;
 using System.Diagnostics.Eventing.Reader;
+using BlogNetworkB.BLL.Services.Interfaces;
 
 namespace BlogNetworkB.Controllers
 {
@@ -22,12 +23,22 @@ namespace BlogNetworkB.Controllers
     {
         readonly IRoleRepository _roleRepository;
         readonly IAuthorRepository _authorRepository;
+        readonly IRoleService _roleService;
+        readonly IAuthorService _authorService;
         readonly IMapper _mapper;
         readonly ILogger<RoleController> _logger;
-        public RoleController(IRoleRepository roleRepository, IAuthorRepository authorRepository, IMapper mapper, ILogger<RoleController> logger)
+        public RoleController(
+            IRoleRepository roleRepository,
+            IAuthorRepository authorRepository,
+            IRoleService roleService,
+            IAuthorService authorService,
+            IMapper mapper,
+            ILogger<RoleController> logger)
         {
             _roleRepository = roleRepository;
             _authorRepository = authorRepository;
+            _roleService = roleService;
+            _authorService = authorService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -43,7 +54,7 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/All")]
         public async Task<IActionResult> RoleList()
         {
-            var roles = await _roleRepository.GetAll();
+            var roles = await _roleService.RoleDTOlist();//await _roleRepository.GetAll();
 
             var rolesArray = _mapper.Map<RoleViewModel[]>(roles);
 
@@ -83,7 +94,7 @@ namespace BlogNetworkB.Controllers
         public async Task<IActionResult> ConfirmAddRole([FromForm] RoleViewModel roleViewModel)
         {
             var admin = HttpContext.User.Claims.FirstOrDefault().Value;
-            var role = await _roleRepository.GetRoleById(roleViewModel.RoleId);
+            var role = await _roleService.GetRoleDTOById(roleViewModel.RoleId);//await _roleRepository.GetRoleById(roleViewModel.RoleId);
 
             try
             {
@@ -98,10 +109,10 @@ namespace BlogNetworkB.Controllers
                     //return View("AddRole", roleViewModel);
                 }
 
-                var author = await _authorRepository.GetAuthorById(roleViewModel.AuthorId);
+                var author = await _authorService.GetAuthorDTOById(roleViewModel.AuthorId);//await _authorRepository.GetAuthorById(roleViewModel.AuthorId);
 
                 // если автор уже имеет такую роль - ничего не происходит
-                bool hasRole = (_authorRepository.GetAuthorsRoles(author).Result.Contains(role) == true);
+                bool hasRole = _authorService.GetAuthorRoleDTOs(author).Result.Contains(role);//(_authorRepository.GetAuthorsRoles(author).Result.Contains(role) == true);
                 if (hasRole)
                 {
                     //ModelState.AddModelError("RoleId", "Пользователь уже имеет такую роль");
@@ -109,7 +120,8 @@ namespace BlogNetworkB.Controllers
                     throw new CustomException($"Пользователь {admin} пытался добавить пользователю {author.Email} роль с id={roleViewModel.RoleId} повторно");
                 }
 
-                await _authorRepository.AddRole(author, role);
+                //await _authorRepository.AddRole(author, role);
+                await _authorService.AddRoleToAuthor(author, role);
 
                 _logger.LogInformation("Пользователь {admin} добавил пользователю {author} роль {id}", admin, author.Email, roleViewModel.RoleId);
 
@@ -133,8 +145,8 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/AuthorRoles/RemoveRole")]
         public async Task<IActionResult> ConfirmRemoveRole([FromForm]RoleViewModel rvm)
         {
-            var role = await _roleRepository.GetRoleById(rvm.RoleId);
-            var author = await _authorRepository.GetAuthorById(rvm.AuthorId);
+            var role = await _roleService.GetRoleDTOById(rvm.RoleId);//await _roleRepository.GetRoleById(rvm.RoleId);
+            var author = await _authorService.GetAuthorDTOById(rvm.AuthorId);//await _authorRepository.GetAuthorById(rvm.AuthorId);
 
             try
             {
@@ -145,7 +157,7 @@ namespace BlogNetworkB.Controllers
                     throw new CustomException($"Роли с id={rvm.RoleId} не существует");
                 }
 
-                var authorRoles = await _authorRepository.GetAuthorsRoles(author);
+                var authorRoles = await _authorService.GetAuthorRoleDTOs(author);//await _authorRepository.GetAuthorsRoles(author);
 
                 // если автор не имеет такую роль
                 bool hasRole = authorRoles.Contains(role) == true;
@@ -160,16 +172,17 @@ namespace BlogNetworkB.Controllers
                     throw new CustomException("Попытка удаления базовой роли");
                 }
 
-                await _authorRepository.DeleteAuthorRole(author, role);
+                //await _authorRepository.DeleteAuthorRole(author, role);
+                await _authorService.DeleteAuthorRole(author, role);
 
-                _logger.LogInformation("Пользователь {admin} удалил у пользователя {email} роль {id}", HttpContext.User.Claims.FirstOrDefault().Value, author.Email, role.Id);
+                _logger.LogInformation("Пользователь {admin} удалил у пользователя {email} роль {id}", HttpContext.User.Claims.FirstOrDefault().Value, author.Email, role.RoleId);
 
                 return RedirectToAction("AuthorsList", "Author");
             }
             catch (Exception ex)
             {
                 _logger.LogError("{error}", ex.Message);
-                CustomErrorViewModel cevm = new CustomErrorViewModel { Message = ex.Message };
+                CustomErrorViewModel cevm = new() { Message = ex.Message };
                 if (ex.Message.Contains("не существует"))
                 {
                     return View("/Views/Alert/NotFound.cshtml", cevm);
@@ -209,18 +222,19 @@ namespace BlogNetworkB.Controllers
         {
             if(ModelState.IsValid)
             {
-                var role = _mapper.Map<Role>(rvm);
+                var role = _mapper.Map<RoleDTO>(rvm);//_mapper.Map<Role>(rvm);
 
                 try
                 {
-                    var sameRole = _roleRepository.GetAll().Result.Any(r => r.Name == role.Name);
+                    var sameRole = _roleService.RoleDTOlist().Result.Any(dto => dto.Name == role.Name);//_roleRepository.GetAll().Result.Any(r => r.Name == role.Name);
 
                     if (sameRole != default)
                     {
                         throw new CustomException($"Попытка добавления дубликата. Роль с именем \'{role.Name}\' уже существует");
                     }
 
-                    await _roleRepository.AddRole(role);
+                    //await _roleRepository.AddRole(role);
+                    await _roleService.AddRole(role);
 
                     _logger.LogInformation("Пользователь {email} добавил роль {roleName}", HttpContext.User.Claims.FirstOrDefault().Value, role.Name);
 
@@ -230,7 +244,7 @@ namespace BlogNetworkB.Controllers
                 {
                     _logger.LogError("{error}", ex.Message);
                     CustomErrorViewModel cevm = new() { Message = ex.Message };
-                    return View("/Views/Alert/SomethingWrong.cshtml", cevm);
+                    return GetErrorPage(cevm);
                 }
             }
 
@@ -246,13 +260,13 @@ namespace BlogNetworkB.Controllers
         {
             try
             {
-                var currAuthor = await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
+                var currAuthor = await _authorService.GetCurrentAuthorDTO(HttpContext);//await _authorRepository.GetAuthorByEmail(HttpContext.User.Claims.FirstOrDefault().Value);
 
                 if (!User.IsInRole("Admin")) throw new CustomException($"Недостаточно прав, {currAuthor.Email}");
 
                 if (int.TryParse(id.ToString(), out int isInt) == false) throw new CustomException($"Некорректно задан id: {id}");
 
-                var role = await _roleRepository.GetRoleById(isInt) ?? throw new CustomException($"Роли с id={id} не существует");
+                var role = /*await _roleRepository.GetRoleById(isInt)*/ await _roleService.GetRoleDTOById(isInt) ?? throw new CustomException($"Роли с id={id} не существует");
 
                 return View("EditRoleDescription", new UpdateRoleRequestViewModel { RoleId = isInt, RoleName = role.Name, NewDescription = role.Description });
             }
@@ -260,7 +274,7 @@ namespace BlogNetworkB.Controllers
             {
                 _logger.LogError("{error}", ex.Message);
                 CustomErrorViewModel cevm = new() { Message = ex.Message };
-                return GetErrorPage(cevm, ex.Message);
+                return GetErrorPage(cevm);
             }
         }
 
@@ -273,11 +287,12 @@ namespace BlogNetworkB.Controllers
             {
                 var request = _mapper.Map<UpdateRoleDescriptionRequest>(urrvm);
 
-                var role = await _roleRepository.GetRoleById(urrvm.RoleId);
+                var role = await _roleService.GetRoleDTOById(urrvm.RoleId);//await _roleRepository.GetRoleById(urrvm.RoleId);
 
-                await _roleRepository.UpdateRole(role, _mapper.Map<UpdateRoleQuery>(request));
+                //await _roleRepository.UpdateRole(role, _mapper.Map<UpdateRoleQuery>(request));*/
+                await _roleService.UpdateRole(role, request);
 
-                _logger.LogInformation("Пользователь {email} изменил описание у роли {id}", HttpContext.User.Claims.FirstOrDefault().Value, role.Id);
+                _logger.LogInformation("Пользователь {email} изменил описание у роли {id}", HttpContext.User.Claims.FirstOrDefault().Value, role.RoleId);
 
                 return RedirectToAction("RoleList");
             }
@@ -300,16 +315,18 @@ namespace BlogNetworkB.Controllers
 
                 if (int.TryParse(id.ToString(), out int isInt) == false) throw new CustomException($"Некорректно задан id: {id}");
 
-                var role = await _roleRepository.GetRoleById(isInt) ?? throw new CustomException($"Роли с id={id} не существует"); ;
+                var role = await _roleService.GetRoleDTOById(isInt)/*await _roleRepository.GetRoleById(isInt)*/ ?? throw new CustomException($"Роли с id={id} не существует"); ;
 
                 if (role.Name == "User" || role.Name == "Moderator" || role.Name == "Admin")
                 {
                     throw new CustomException($"Попытка удалить одну из стандартных ролей: {role.Name}");
                 }
 
-                await _roleRepository.DeleteRole(role);
+                //await _roleRepository.DeleteRole(role);
 
-                _logger.LogInformation("Пользователь {email} удалил роль с {id}", HttpContext.User.Claims.FirstOrDefault().Value, role.Id);
+                await _roleService.DeleteRole(role);
+
+                _logger.LogInformation("Пользователь {email} удалил роль с {id}", HttpContext.User.Claims.FirstOrDefault().Value, role.RoleId);
 
                 return RedirectToAction("RoleList");
             }
@@ -317,19 +334,19 @@ namespace BlogNetworkB.Controllers
             {
                 _logger.LogError("{error}", ex.Message);
                 CustomErrorViewModel cevm = new() { Message = ex.Message };
-                return GetErrorPage(cevm, ex.Message);
+                return GetErrorPage(cevm);
             }
         }
 
         #region ошибки
 
-        ActionResult GetErrorPage(CustomErrorViewModel cevm, string message)
+        ActionResult GetErrorPage(CustomErrorViewModel cevm)
         {
-            if (message.Contains("Недостаточно прав"))
+            if (cevm.Message.Contains("Недостаточно прав"))
             {
                 return View("/Views/Alert/AccessDenied.cshtml", cevm);
             }
-            if (message.Contains("не существует"))
+            if (cevm.Message.Contains("не существует"))
             {
                 return View("/Views/Alert/NotFound.cshtml", cevm);
             }
