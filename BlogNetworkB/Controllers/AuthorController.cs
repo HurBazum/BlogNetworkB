@@ -262,6 +262,7 @@ namespace BlogNetworkB.Controllers
 
         [Authorize]
         [HttpPost]
+        [Route("/[controller]/Delete")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
             try

@@ -13,6 +13,7 @@ namespace ConnectionLib.DAL.Repositories
 
         public async Task AddComment(Comment comment)
         {
+            comment.CreatedDate = DateTime.UtcNow;
             var entry = _blogContext.Comments.Entry(comment);
             if (entry.State == EntityState.Detached)
             {

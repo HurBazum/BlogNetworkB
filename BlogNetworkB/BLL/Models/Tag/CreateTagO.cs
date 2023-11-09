@@ -2,10 +2,10 @@
 
 namespace BlogNetworkB.BLL.Models.Tag
 {
-    public class UpdateTagRequest
+    public class CreateTagO
     {
         [MaxLength(25, ErrorMessage = "Тег должен быть не длиннее 25 символов")]
         [DataType(DataType.Text)]
-        public string NewContent { get; set; }
+        public string Content { get; set; }
     }
 }

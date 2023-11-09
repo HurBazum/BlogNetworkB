@@ -5,24 +5,17 @@ using BlogNetworkB.BLL.Services;
 using ConnectionLib.DAL.Repositories.Interfaces;
 using ConnectionLib.DAL.Repositories;
 using ConnectionLib.DAL;
-using ConnectionLib;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 // Create mapper
 var configMap = new MapperConfiguration(c => c.AddProfile(new MappingProfile()));
 IMapper mapper = configMap.CreateMapper();
 
-// Add context, repos, services to the container.
-builder.Services.AddDbContext<BlogContext>(options => options.UseSqlite(SQLiteBaseBuilder.GetConnectionString(AppDomain.CurrentDomain)))
+// Add context, repos, services
+builder.Services.AddDbContext<BlogContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")))
                 .AddScoped<IAuthorRepository, AuthorRepository>()
                 .AddScoped<IRoleRepository, RoleRepository>()
                 .AddScoped<IArticleRepository, ArticleRepository>()
@@ -48,6 +41,13 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = "Cookies")
                         }
                     };
                 });
+
+
+builder.Services.AddControllers();
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 

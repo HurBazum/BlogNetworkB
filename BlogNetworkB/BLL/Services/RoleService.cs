@@ -36,6 +36,11 @@ namespace BlogNetworkB.BLL.Services
         {
             var role = _mapper.Map<Role>(roleDTO);
 
+            if(role.Description == null || role.Description.Length < 10)
+            {
+                role.Description = "standart role";
+            }
+
             await _roleRepository.AddRole(role);
         }
 

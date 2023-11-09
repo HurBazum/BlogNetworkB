@@ -83,7 +83,6 @@ namespace BlogNetworkB.Controllers
         [Route("/[controller]/DeleteTag")]
         public async Task<IActionResult> DeleteTag(int id)
         {
-
             try
             {
                 await _tagService.DeleteTag(id);

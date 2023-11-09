@@ -35,4 +35,8 @@
     <ProjectReference Include="..\ConnectionLib\ConnectionLib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="BLL\Response\" />
+  </ItemGroup>
+
 </Project>

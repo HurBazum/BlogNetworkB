@@ -29,6 +29,7 @@ namespace BlogNetworkB.Infrastructure.Mapping
             CreateMap<UpdateAuthorRequestViewModel, UpdateAuthorRequest>();
             CreateMap<UpdateAuthorRequest, UpdateAuthorQuery>();
 
+            CreateMap<CreateAuthorO, AuthorDTO>();
             CreateMap<RegisterViewModel, AuthorDTO>();
             CreateMap<Author, AuthorDTO>().ForMember("AuthorId", dto => dto.MapFrom(a => a.Id));
             CreateMap<AuthorDTO, Author>();
@@ -45,6 +46,7 @@ namespace BlogNetworkB.Infrastructure.Mapping
 
             CreateMap<Article, ArticleDTO>().ForMember("ArticleId", avm => avm.MapFrom(dto => dto.Id));
             CreateMap<ArticleDTO, Article>();
+            CreateMap<CreateArticleO, ArticleDTO>();
             CreateMap<ArticleDTO, ArticleViewModel>()
                 .ForMember("CreatorId", avm => avm.MapFrom(dto => dto.AuthorId));
             CreateMap<ArticleViewModel, ArticleDTO>();
@@ -57,6 +59,7 @@ namespace BlogNetworkB.Infrastructure.Mapping
 
             CreateMap<Tag, TagDTO>().ForMember("TagId", tvm => tvm.MapFrom(dto => dto.Id));
             CreateMap<TagDTO, Tag>();
+            CreateMap<CreateTagO, TagDTO>();
             CreateMap<TagDTO, TagViewModel>();
 
             // comment
@@ -67,6 +70,7 @@ namespace BlogNetworkB.Infrastructure.Mapping
 
             CreateMap<Comment, CommentDTO>().ForMember("CommentId", cvm => cvm.MapFrom(dto => dto.Id));
             CreateMap<CommentDTO, Comment>();
+            CreateMap<CreateCommentO, CommentDTO>();
             CreateMap<CommentDTO, CommentViewModel>();
             CreateMap<CreateCommentViewModel, CommentDTO>();
 
@@ -75,9 +79,10 @@ namespace BlogNetworkB.Infrastructure.Mapping
             CreateMap<RoleViewModel, Role>();
             CreateMap<UpdateRoleRequestViewModel, UpdateRoleDescriptionRequest>();
             CreateMap<UpdateRoleDescriptionRequest, UpdateRoleQuery>();
-
+                        
             CreateMap<Role, RoleDTO>().ForMember("RoleId", rvm => rvm.MapFrom(dto => dto.Id));
             CreateMap<RoleDTO, Role>();
+            CreateMap<CreateRoleO, RoleDTO>();
             CreateMap<RoleDTO, RoleViewModel>();
             CreateMap<RoleViewModel, RoleDTO>();
         }

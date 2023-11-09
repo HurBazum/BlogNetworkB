@@ -39,11 +39,6 @@ namespace BlogNetworkB.Controllers
             _tagService = tagService;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
-
         [Authorize]
         [HttpGet]
         [Route("/[controller]/NewArticle")]
