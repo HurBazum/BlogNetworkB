@@ -84,6 +84,12 @@ namespace BlogApi.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="uar"></param>
+        /// <returns></returns>
         [HttpPut]
         [Route("[controller]/UpdateAuthor/{id}")]
         public async Task<IActionResult> UpdateAuthor([FromRoute]int id, [FromBody]UpdateAuthorRequest uar)
