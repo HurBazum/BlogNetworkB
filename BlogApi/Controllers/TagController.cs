@@ -18,7 +18,6 @@ namespace BlogApi.Controllers
             _mapper = mapper;
         }
 
-        // GET 
         [Route("[controller]/All")]
         [HttpGet]
         public async Task<IActionResult> TagList()
@@ -68,12 +67,6 @@ namespace BlogApi.Controllers
             return BadRequest();
         }
 
-        /// <summary>
-        /// Что это
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="utr"></param>
-        /// <returns></returns>
         [Route("[controller]/UpdateTag/{id}")]
         [HttpPut]
         public async Task<IActionResult> UpdateTag([FromRoute]int id, [FromBody]UpdateTagRequest utr)
